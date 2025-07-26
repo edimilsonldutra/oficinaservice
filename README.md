@@ -2,7 +2,7 @@
 
 ## 1. Visão Geral
 
-Este projeto consiste num microsserviço robusto para a gestão de uma oficina mecânica, desenvolvido em **Java 17** com **Spring Boot 3**. O seu principal objetivo é gerir Ordens de Serviço (OS), Clientes, Veículos, Peças e Serviços, aplicando conceitos modernos de arquitetura de software para garantir escalabilidade, manutenibilidade e qualidade.
+Este projeto consiste num microsserviço robusto para a gestão de uma oficina mecânica, desenvolvido em **Java 21** com **Spring Boot 3**. O seu principal objetivo é gerir Ordens de Serviço (OS), Clientes, Veículos, Peças e Serviços, aplicando conceitos modernos de arquitetura de software para garantir escalabilidade, manutenibilidade e qualidade.
 
 A aplicação foi construída sobre os pilares da **Arquitetura Hexagonal (Portas e Adaptadores)** e do **Domain-Driven Design (DDD)**, o que garante um baixo acoplamento entre a lógica de negócio e as tecnologias de infraestrutura (como base de dados e frameworks web).
 
@@ -12,7 +12,7 @@ A aplicação foi construída sobre os pilares da **Arquitetura Hexagonal (Porta
 
 - **Arquitetura Hexagonal:** Isola o núcleo da aplicação (domínio e casos de uso) de detalhes externos. As "Portas" (interfaces no domínio) definem os contratos, e os "Adaptadores" (classes na infraestrutura) implementam esses contratos, conectando a aplicação ao mundo exterior (API REST, base de dados, etc.).
 - **Domain-Driven Design (DDD):** Foca em modelar o software para corresponder a um domínio de negócio. Utilizamos conceitos como Agregados (`OrdemServico`), Entidades, e Serviços de Domínio para criar um modelo rico e expressivo.
-- **Java 17 & Spring Boot 3:** Plataforma e framework principal para o desenvolvimento do back-end.
+- **Java 21 & Spring Boot 3:** Plataforma e framework principal para o desenvolvimento do back-end.
 - **PostgreSQL:** Base de dados relacional escolhida pela sua robustez, fiabilidade e funcionalidades avançadas.
 - **Spring Data JPA:** Para a camada de persistência de dados.
 - **Spring Security & JWT:** Para garantir a segurança da API através de autenticação e autorização baseadas em tokens.
@@ -50,7 +50,7 @@ A aplicação foi construída sobre os pilares da **Arquitetura Hexagonal (Porta
 
 Para executar este projeto localmente, necessitará de ter instalado:
 
-- **Java 17** ou superior
+- **Java 21** ou superior
 - **Maven 3.8** ou superior
 - **Docker**
 - **Docker Compose**
@@ -124,14 +124,76 @@ docker-compose down -v
 ## 6. 📁 Estrutura do Projeto
 
 O projeto segue a estrutura da Arquitetura Hexagonal, que promove a separação de responsabilidades:
-```
+```plaintext
 oficina-service/
 └── src/
     └── main/
         ├── java/
-        │   └── .../oficina/
-        │       ├── domain/        # O núcleo: Entidades, Repositórios (interfaces) e Serviços de Domínio
-        │       ├── application/   # Orquestração: Casos de Uso (interfaces), DTOs e Serviços de Aplicação
-        │       └── infrastructure/  # O mundo exterior: Config, Persistência (JPA), API REST e Segurança
+        │   └── br/com/grupo/oficinaservice/
+        │       ├── domain/
+        │       │   ├── model/
+        │       │   │   ├── Cliente.java
+        │       │   │   ├── ItemPeca.java
+        │       │   │   ├── ItemServico.java
+        │       │   │   ├── OrdemServico.java (Aggregate Root)
+        │       │   │   ├── Peca.java
+        │       │   │   ├── Servico.java
+        │       │   │   ├── StatusOS.java
+        │       │   │   └── Veiculo.java
+        │       │   ├── repository/ (Ports)
+        │       │   │   ├── ClienteRepository.java
+        │       │   │   ├── OrdemServicoRepository.java
+        │       │   │   ├── PecaRepository.java
+        │       │   │   ├── ServicoRepository.java
+        │       │   │   └── VeiculoRepository.java
+        │       │   └── service/
+        │       │       └── OrcamentoService.java
+        │       ├── application/
+        │       │   ├── dto/
+        │       │   │   ├── ClienteDTOs.java
+        │       │   │   ├── OrdemServicoDTOs.java
+        │       │   │   ├── PecaDTOs.java
+        │       │   │   ├── ServicoDTOs.java
+        │       │   │   └── VeiculoDTOs.java
+        │       │   ├── exception/
+        │       │   │   ├── BusinessException.java
+        │       │   │   └── ResourceNotFoundException.java
+        │       │   ├── service/ (Use Case Implementations)
+        │       │   │   ├── ClienteApplicationService.java
+        │       │   │   ├── OrdemServicoApplicationService.java
+        │       │   │   ├── PecaApplicationService.java
+        │       │   │   ├── ServicoApplicationService.java
+        │       │   │   └── VeiculoApplicationService.java
+        │       │   └── usecase/ (Use Case Interfaces)
+        │       │       ├── AcompanharOrdemServicoUseCase.java
+        │       │       ├── AutenticarUsuarioUseCase.java
+        │       │       ├── ... (e outros casos de uso)
+        │       └── infrastructure/
+        │           ├── config/
+        │           │   ├── OpenApiConfig.java
+        │           │   └── SecurityConfig.java
+        │           ├── persistence/ (Adapters)
+        │           │   ├── jpa/
+        │           │   │   ├── ClienteJpaRepository.java
+        │           │   │   ├── OrdemServicoJpaRepository.java
+        │           │   │   ├── ... (e outros repositórios JPA)
+        │           │   └── repository/
+        │           │       ├── ClienteRepositoryImpl.java
+        │           │       ├── OrdemServicoRepositoryImpl.java
+        │           │       ├── ... (e outras implementações)
+        │           ├── rest/ (Adapters)
+        │           │   ├── AuthController.java
+        │           │   ├── ClienteController.java
+        │           │   ├── OrdemServicoController.java
+        │           │   ├── PecaController.java
+        │           │   ├── ServicoController.java
+        │           │   └── VeiculoController.java
+        │           └── security/
+        │               ├── jwt/
+        │               │   ├── AuthRequest.java
+        │               │   ├── AuthResponse.java
+        │               │   ├── JwtRequestFilter.java
+        │               │   └── JwtUtil.java
+        │               └── UserDetailsServiceImpl.java
         └── resources/
             └── application.properties
