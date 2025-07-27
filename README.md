@@ -17,7 +17,7 @@ A aplicação foi construída sobre os pilares da **Arquitetura Hexagonal (Porta
 - **Spring Data JPA:** Para a camada de persistência de dados.
 - **Spring Security & JWT:** Para garantir a segurança da API através de autenticação e autorização baseadas em tokens.
 - **Docker & Docker Compose:** Para containerização da aplicação e orquestração do ambiente de desenvolvimento, garantindo uma configuração simples e consistente.
-- **Maven:** Como ferramenta de gestão de dependências e build.
+- **Maven & JaCoCo:** Como ferramenta de gestão de dependências, build e relatório de cobertura de testes.
 - **Swagger (OpenAPI 3):** Para documentação interativa da API RESTful.
 
 ---
@@ -121,7 +121,28 @@ docker-compose down -v
 
 ---
 
-## 6. 📁 Estrutura do Projeto
+## 6. 📊 Gerando Relatório de Cobertura de Testes (JaCoCo)
+
+O projeto está configurado com o plugin JaCoCo para medir a cobertura dos testes automatizados. Para gerar o relatório, execute o seguinte comando Maven na raiz do projeto (não precisa de ter o Docker a correr):
+
+```bash
+mvn clean verify
+```
+
+Este comando irá:
+1. Limpar o projeto (`clean`).
+2. Executar todos os testes unitários e de integração (`verify`).
+3. Gerar o relatório de cobertura do JaCoCo.
+
+Após a execução, o relatório estará disponível no seguinte ficheiro. Pode abri-lo diretamente no seu navegador:
+
+`target/site/jacoco/index.html`
+
+O relatório interativo mostrará a percentagem de cobertura por classe, método e linha, ajudando a identificar áreas do código que necessitam de mais testes para atingir a meta de 80%.
+
+---
+
+## 7. 📁 Estrutura do Projeto
 
 O projeto segue a estrutura da Arquitetura Hexagonal, que promove a separação de responsabilidades:
 ```plaintext
