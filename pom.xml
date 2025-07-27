@@ -48,6 +48,16 @@
             <artifactId>postgresql</artifactId>
             <scope>runtime</scope>
         </dependency>
+
+        <!-- =============================================================== -->
+        <!-- DEPENDÊNCIA DO H2 ADICIONADA PARA O ESCOPO DE TESTE -->
+        <!-- =============================================================== -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
+
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-api</artifactId>
@@ -96,7 +106,6 @@
                     </excludes>
                 </configuration>
             </plugin>
-            <!-- Plugin JaCoCo adicionado para cobertura de testes -->
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>

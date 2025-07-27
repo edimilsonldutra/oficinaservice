@@ -11,6 +11,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
@@ -19,8 +20,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SpringBootTest
+@ActiveProfiles("test")
 @Transactional
-@DisplayName("Teste de Integração - VeiculoApplicationService")
+@DisplayName("Teste de Integração Completo - VeiculoApplicationService")
 class VeiculoApplicationServiceIT {
 
     @Autowired
@@ -40,20 +42,18 @@ class VeiculoApplicationServiceIT {
     @Test
     @DisplayName("Deve criar um veículo para um cliente existente")
     void deveCriarVeiculo() {
-        VeiculoRequestDTO request = new VeiculoRequestDTO("VEI-2024", "angshgu", "VW", "Nivus", 2024, cliente.getId());
-
+        VeiculoRequestDTO request = new VeiculoRequestDTO("VEI-2024", "12345678901", "VW", "Nivus", 2024, cliente.getId());
         VeiculoResponseDTO response = veiculoService.create(request);
 
         assertThat(response).isNotNull();
         assertThat(response.placa()).isEqualTo("VEI-2024");
-     //   assertThat(veiculoRepository.count()).isEqualTo(1);
+        assertThat(veiculoRepository.findAll()).hasSize(1);
     }
 
     @Test
     @DisplayName("Deve lançar exceção ao criar veículo para cliente inexistente")
     void deveLancarExcecaoAoCriarVeiculoParaClienteInexistente() {
-        VeiculoRequestDTO request = new VeiculoRequestDTO("VEI-FAIL", "test", "Marca", "Modelo", 2024, UUID.randomUUID());
-
+        VeiculoRequestDTO request = new VeiculoRequestDTO("VEI-FAIL", "12345678901", "Marca", "Modelo", 2024, UUID.randomUUID());
         assertThrows(ResourceNotFoundException.class, () -> veiculoService.create(request));
     }
 }

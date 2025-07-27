@@ -4,7 +4,6 @@ import br.com.grupo99.oficinaservice.application.dto.OrdemServicoRequestDTO;
 import br.com.grupo99.oficinaservice.application.dto.OrdemServicoResponseDTO;
 import br.com.grupo99.oficinaservice.application.exception.BusinessException;
 import br.com.grupo99.oficinaservice.application.exception.ResourceNotFoundException;
-
 import br.com.grupo99.oficinaservice.domain.model.*;
 import br.com.grupo99.oficinaservice.domain.repository.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,6 +11,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -23,8 +23,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SpringBootTest
+@ActiveProfiles("test")
 @Transactional
-@DisplayName("Teste de Integração - OrdemServicoApplicationService")
+@DisplayName("Teste de Integração Completo - OrdemServicoApplicationService")
 class OrdemServicoApplicationServiceIT {
 
     @Autowired
@@ -47,19 +48,22 @@ class OrdemServicoApplicationServiceIT {
 
     @BeforeEach
     void setUp() {
-        cliente = clienteRepository.save(new Cliente("Cliente OS", "333.333.333-33"));
-        veiculo = veiculoRepository.save(new Veiculo("OS-1234", "Ford", "Ka", 2018));
+        cliente = new Cliente("Cliente OS", "333.333.333-33");
+        veiculo = new Veiculo("OS-1234", "Ford", "Ka", 2018);
         veiculo.setCliente(cliente);
         cliente.getVeiculos().add(veiculo);
-        clienteRepository.save(cliente);
+        cliente = clienteRepository.save(cliente);
+        veiculo = cliente.getVeiculos().get(0);
 
         peca = new Peca();
         peca.setEstoque(10);
         peca.setPreco(new BigDecimal("100.00"));
+        peca.setNome("Peca Teste");
         peca = pecaRepository.save(peca);
 
         servico = new Servico();
         servico.setPreco(new BigDecimal("200.00"));
+        servico.setDescricao("Servico Teste");
         servico = servicoRepository.save(servico);
     }
 
@@ -78,7 +82,7 @@ class OrdemServicoApplicationServiceIT {
         assertThat(response).isNotNull();
         assertThat(response.status()).isEqualTo(StatusOS.RECEBIDA);
         assertThat(response.valorTotal()).isEqualByComparingTo(new BigDecimal("300.00"));
-     //   assertThat(osRepository.count()).isEqualTo(1);
+        assertThat(osRepository.findAll()).hasSize(1);
     }
 
     @Test
@@ -88,7 +92,7 @@ class OrdemServicoApplicationServiceIT {
                 cliente.getCpfCnpj(),
                 veiculo.getPlaca(),
                 Collections.emptyList(),
-                List.of(UUID.randomUUID()) // ID de peça que não existe
+                List.of(UUID.randomUUID())
         );
 
         assertThrows(ResourceNotFoundException.class, () -> osService.execute(request));
@@ -109,9 +113,8 @@ class OrdemServicoApplicationServiceIT {
     @Test
     @DisplayName("Deve lançar exceção ao tentar uma transição de status inválida")
     void deveLancarExcecaoEmTransicaoDeStatusInvalida() {
-        OrdemServico os = osRepository.save(new OrdemServico(cliente, veiculo)); // Status inicial: RECEBIDA
+        OrdemServico os = osRepository.save(new OrdemServico(cliente, veiculo));
 
-        // Tentar pular direto para EM_EXECUCAO
         assertThrows(BusinessException.class, () -> osService.execute(os.getId(), StatusOS.EM_EXECUCAO));
     }
 }
