@@ -13,6 +13,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -29,6 +30,101 @@ class PecaApplicationServiceIT {
 
     @Autowired
     private PecaRepository pecaRepository;
+
+    @Test
+    @DisplayName("Dado um DTO de peça válido, Quando criar, Então a peça deve ser salva")
+    void givenValidPecaRequest_whenCreate_thenShouldSavePeca() {
+        // Given
+        PecaRequestDTO request = new PecaRequestDTO("Filtro de Óleo", "Mann Filter", new BigDecimal("35.50"), 20);
+
+        // When
+        PecaResponseDTO response = pecaService.create(request);
+
+        // Then
+        assertThat(response).isNotNull();
+        assertThat(response.nome()).isEqualTo("Filtro de Óleo");
+        assertThat(pecaRepository.findAll()).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("Dado uma peça existente, Quando adicionar estoque, Então o estoque deve ser atualizado")
+    void givenExistingPeca_whenAddEstoque_thenShouldUpdateEstoque() {
+        // Given
+        Peca peca = pecaRepository.save(createPeca("Vela", 10));
+
+        // When
+        PecaResponseDTO response = pecaService.adicionarEstoque(peca.getId(), 5);
+
+        // Then
+        assertThat(response.estoque()).isEqualTo(15);
+    }
+
+    @Test
+    @DisplayName("Dado um ID de peça inexistente, Quando adicionar estoque, Então deve lançar exceção")
+    void givenNonExistingPecaId_whenAddEstoque_thenShouldThrowException() {
+        // Given
+        UUID idInexistente = UUID.randomUUID();
+
+        // When & Then
+        assertThrows(ResourceNotFoundException.class, () -> pecaService.adicionarEstoque(idInexistente, 5));
+    }
+
+    @Test
+    @DisplayName("Dado uma peça existente, Quando buscar pelo ID, Então deve retornar a peça correta")
+    void givenExistingPeca_whenGetById_thenShouldReturnPeca() {
+        // Given
+        Peca peca = pecaRepository.save(createPeca("Amortecedor", 8));
+
+        // When
+        PecaResponseDTO response = pecaService.getById(peca.getId());
+
+        // Then
+        assertThat(response).isNotNull();
+        assertThat(response.nome()).isEqualTo("Amortecedor");
+    }
+
+    @Test
+    @DisplayName("Dado que existem peças, Quando listar todas, Então deve retornar a lista de peças")
+    void givenPecasExist_whenGetAll_thenShouldReturnPecaList() {
+        // Given
+        pecaRepository.save(createPeca("Peca A", 1));
+        pecaRepository.save(createPeca("Peca B", 2));
+
+        // When
+        List<PecaResponseDTO> pecas = pecaService.getAll();
+
+        // Then
+        assertThat(pecas).hasSize(2);
+    }
+
+    @Test
+    @DisplayName("Dado uma peça existente e novos dados, Quando atualizar, Então a peça deve ser atualizada")
+    void givenExistingPecaAndNewData_whenUpdate_thenShouldUpdatePeca() {
+        // Given
+        Peca peca = pecaRepository.save(createPeca("Nome Antigo", 10));
+        PecaRequestDTO request = new PecaRequestDTO("Nome Novo", "Novo Fabricante", new BigDecimal("99.99"), 50);
+
+        // When
+        PecaResponseDTO response = pecaService.update(peca.getId(), request);
+
+        // Then
+        assertThat(response.nome()).isEqualTo("Nome Novo");
+        assertThat(response.estoque()).isEqualTo(50);
+    }
+
+    @Test
+    @DisplayName("Dado uma peça existente, Quando deletar, Então a peça não deve mais existir")
+    void givenExistingPeca_whenDelete_thenShouldNotExistAnymore() {
+        // Given
+        Peca peca = pecaRepository.save(createPeca("Peca para Deletar", 1));
+        UUID pecaId = peca.getId();
+
+        // When
+        pecaService.delete(pecaId);
+
+        // Then
+        assertThat(pecaRepository.findById(pecaId)).isEmpty();
+    }
 
     @Test
     @DisplayName("Deve criar uma nova peça")

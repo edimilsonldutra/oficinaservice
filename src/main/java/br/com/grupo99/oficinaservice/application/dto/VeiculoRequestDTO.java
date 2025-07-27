@@ -2,6 +2,7 @@ package br.com.grupo99.oficinaservice.application.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 
 import java.util.UUID;
 
@@ -16,7 +17,7 @@ import java.util.UUID;
  */
 public record VeiculoRequestDTO(
         @NotBlank(message = "A placa não pode ser vazia.")
-        // Adicionar validação de formato de placa se necessário
+        @Pattern(regexp = "[A-Z]{3}[0-9][A-Z][0-9]{2}|[A-Z]{3}-[0-9]{4}", message = "Formato de placa inválido. Use o padrão Mercosul (ABC1D23) ou antigo (ABC-1234).")
         String placa,
 
         String renavam,
