@@ -40,36 +40,59 @@ public class OrdemServicoApplicationService implements CriarOrdemServicoUseCase,
     @Override
     @Transactional
     public OrdemServicoResponseDTO execute(OrdemServicoRequestDTO request) {
+        // 1. Busca as entidades completas a partir dos identificadores
         Cliente cliente = clienteRepository.findByCpfCnpj(request.cpfCnpjCliente())
-                .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado com o CPF/CNPJ: " + request.cpfCnpjCliente()));
+                .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado"));
 
         Veiculo veiculo = veiculoRepository.findByPlaca(request.placaVeiculo())
-                .orElseThrow(() -> new ResourceNotFoundException("Veículo não encontrado com a placa: " + request.placaVeiculo()));
+                .orElseThrow(() -> new ResourceNotFoundException("Veículo não encontrado"));
 
-        OrdemServico os = new OrdemServico(cliente, veiculo);
+        // Validação de negócio: o veículo pertence ao cliente?
+        if (veiculo.getCliente() == null || !veiculo.getCliente().getId().equals(cliente.getId())) {
+            throw new BusinessException("A placa informada não pertence ao cliente.");
+        }
 
-        request.servicosIds().forEach(servicoId -> {
-            Servico servico = servicoRepository.findById(servicoId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Serviço não encontrado: " + servicoId));
-            os.adicionarServico(servico, 1);
-        });
+        // 2. Cria o agregado OrdemServico usando os IDs
+        OrdemServico os = new OrdemServico(cliente.getId(), veiculo.getId());
 
-        request.pecasIds().forEach(pecaId -> {
-            Peca peca = pecaRepository.findById(pecaId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Peça não encontrada: " + pecaId));
-            os.adicionarPeca(peca, 1);
-        });
+        // 3. Adiciona peças e serviços
+        if (request.servicosIds() != null) {
+            request.servicosIds().forEach(servicoId -> {
+                Servico servico = servicoRepository.findById(servicoId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Serviço não encontrado: " + servicoId));
+                os.adicionarServico(servico, 1);
+            });
+        }
 
+        if (request.pecasIds() != null) {
+            request.pecasIds().forEach(pecaId -> {
+                Peca peca = pecaRepository.findById(pecaId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Peça não encontrada: " + pecaId));
+                os.adicionarPeca(peca, 1);
+            });
+        }
+
+        // 4. Salva o agregado
         OrdemServico osSalva = ordemServicoRepository.save(os);
-        return OrdemServicoResponseDTO.fromDomain(osSalva);
+
+        // 5. Retorna o DTO
+        return OrdemServicoResponseDTO.fromDomain(osSalva, cliente.getNome(), veiculo.getPlaca());
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<OrdemServicoResponseDTO> execute() {
-        return ordemServicoRepository.findAll().stream()
-                .map(OrdemServicoResponseDTO::fromDomain)
-                .collect(Collectors.toList());
+        List<OrdemServico> ordens = ordemServicoRepository.findAll();
+
+        return ordens.stream().map(os -> {
+            Cliente cliente = clienteRepository.findById(os.getClienteId()).orElse(null);
+            Veiculo veiculo = veiculoRepository.findById(os.getVeiculoId()).orElse(null);
+
+            String clienteNome = (cliente != null) ? cliente.getNome() : "Cliente não encontrado";
+            String placaVeiculo = (veiculo != null) ? veiculo.getPlaca() : "Veículo não encontrado";
+
+            return OrdemServicoResponseDTO.fromDomain(os, clienteNome, placaVeiculo);
+        }).collect(Collectors.toList());
     }
 
     @Override
@@ -77,7 +100,14 @@ public class OrdemServicoApplicationService implements CriarOrdemServicoUseCase,
     public OrdemServicoDetalhesDTO execute(UUID id) {
         OrdemServico os = ordemServicoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Ordem de Serviço não encontrada com o id: " + id));
-        return OrdemServicoDetalhesDTO.fromDomain(os);
+
+        Cliente cliente = clienteRepository.findById(os.getClienteId())
+                .orElseThrow(() -> new ResourceNotFoundException("Cliente associado à OS não encontrado"));
+
+        Veiculo veiculo = veiculoRepository.findById(os.getVeiculoId())
+                .orElseThrow(() -> new ResourceNotFoundException("Veículo associado à OS não encontrado"));
+
+        return OrdemServicoDetalhesDTO.fromDomain(os, cliente, veiculo);
     }
 
     @Override
@@ -99,6 +129,14 @@ public class OrdemServicoApplicationService implements CriarOrdemServicoUseCase,
             throw new BusinessException(e.getMessage());
         }
 
-        return OrdemServicoResponseDTO.fromDomain(ordemServicoRepository.save(os));
+        OrdemServico osSalva = ordemServicoRepository.save(os);
+
+        // Busca os dados para o DTO de resposta
+        Cliente cliente = clienteRepository.findById(osSalva.getClienteId())
+                .orElseThrow(() -> new ResourceNotFoundException("Cliente associado à OS não encontrado"));
+        Veiculo veiculo = veiculoRepository.findById(osSalva.getVeiculoId())
+                .orElseThrow(() -> new ResourceNotFoundException("Veículo associado à OS não encontrado"));
+
+        return OrdemServicoResponseDTO.fromDomain(osSalva, cliente.getNome(), veiculo.getPlaca());
     }
 }

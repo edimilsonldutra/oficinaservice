@@ -30,11 +30,11 @@ public record OrdemServicoResponseDTO(
      * Método de fábrica para converter uma entidade OrdemServico em um OrdemServicoResponseDTO.
      * Este é o método que estava faltando.
      */
-    public static OrdemServicoResponseDTO fromDomain(OrdemServico os) {
+    public static OrdemServicoResponseDTO fromDomain(OrdemServico os, String clienteNome, String placaVeiculo) {
         return new OrdemServicoResponseDTO(
                 os.getId(),
-                os.getCliente().getNome(),
-                os.getVeiculo().getPlaca(),
+                clienteNome,
+                placaVeiculo,
                 os.getStatus(),
                 os.getValorTotal(),
                 os.getDataCriacao()

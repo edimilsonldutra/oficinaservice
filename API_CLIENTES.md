@@ -22,10 +22,10 @@ Cria um novo cliente na base de dados.
 **Request Body:**
 ```json
 {
-    "nome": "Carlos Andrade",
-    "cpfCnpj": "11144477735",
-    "email": "carlos.andrade@example.com",
-    "telefone": "11987654321"
+  "nome": "Carlos Andrade",
+  "cpfCnpj": "11144477735",
+  "email": "carlos.andrade@example.com",
+  "telefone": "11987654321"
 }
 ```
 
@@ -92,11 +92,11 @@ Atualiza os dados de um cliente existente.
 **Response (200 OK):**
 ```json
 {
-    "id": "c1b3a2d4-e5f6-7890-1234-567890abcdef",
-    "nome": "Carlos Andrade da Silva",
-    "cpfCnpj": "11144477735",
-    "email": "carlos.silva@example.com",
-    "telefone": "11988887777"
+  "id": "c1b3a2d4-e5f6-7890-1234-567890abcdef",
+  "nome": "Carlos Andrade da Silva",
+  "cpfCnpj": "11144477735",
+  "email": "carlos.silva@example.com",
+  "telefone": "11988887777"
 }
 ```
 

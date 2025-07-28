@@ -2,10 +2,9 @@ package br.com.grupo99.oficinaservice.infrastructure.rest;
 
 import br.com.grupo99.oficinaservice.application.dto.OrdemServicoRequestDTO;
 
+import br.com.grupo99.oficinaservice.application.dto.OrdemServicoStatusUpdateRequestDTO;
 import br.com.grupo99.oficinaservice.domain.model.*;
-import br.com.grupo99.oficinaservice.domain.repository.ClienteRepository;
-import br.com.grupo99.oficinaservice.domain.repository.PecaRepository;
-import br.com.grupo99.oficinaservice.domain.repository.ServicoRepository;
+import br.com.grupo99.oficinaservice.domain.repository.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -20,111 +19,129 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@ActiveProfiles("test")
 @Transactional
 @DisplayName("Teste de Integração - OrdemServicoController")
-@ActiveProfiles("test")
 class OrdemServicoControllerIT {
 
-    @Autowired
-    private MockMvc mockMvc;
-
-    @Autowired
-    private ObjectMapper objectMapper;
-
+    @Autowired private MockMvc mockMvc;
+    @Autowired private ObjectMapper objectMapper;
     @Autowired private ClienteRepository clienteRepository;
+    @Autowired private VeiculoRepository veiculoRepository;
     @Autowired private PecaRepository pecaRepository;
     @Autowired private ServicoRepository servicoRepository;
+    @Autowired private OrdemServicoRepository osRepository;
 
-    private Cliente clienteSalvo;
-    private Veiculo veiculoSalvo;
-    private Peca pecaSalva;
-    private Servico servicoSalvo;
+    private Cliente cliente;
+    private Veiculo veiculo;
+    private Peca peca;
+    private Servico servico;
 
     @BeforeEach
     void setUp() {
-        Cliente cliente = new Cliente("Cliente OS Teste", "11122233344");
-        Veiculo veiculo = new Veiculo("OST-0001", "Test", "Model S", 2025);
-        cliente.getVeiculos().add(veiculo);
+        cliente = new Cliente("Cliente OS Teste", "11122233344");
+        veiculo = new Veiculo("OST-0001", "Test", "Model S", 2025);
         veiculo.setCliente(cliente);
-        clienteSalvo = clienteRepository.save(cliente);
-        veiculoSalvo = clienteSalvo.getVeiculos().get(0);
+        cliente.getVeiculos().add(veiculo);
+        cliente = clienteRepository.save(cliente);
+        veiculo = cliente.getVeiculos().get(0);
 
-        Peca peca = new Peca();
+        peca = new Peca();
         peca.setNome("Filtro de Ar");
         peca.setPreco(new BigDecimal("80.00"));
         peca.setEstoque(15);
-        pecaSalva = pecaRepository.save(peca);
+        peca = pecaRepository.save(peca);
 
-        Servico servico = new Servico();
+        servico = new Servico();
         servico.setDescricao("Troca de Filtro de Ar");
         servico.setPreco(new BigDecimal("50.00"));
-        servicoSalvo = servicoRepository.save(servico);
+        servico = servicoRepository.save(servico);
     }
 
     @Test
-    @DisplayName("Deve criar uma OS com sucesso e retornar 201 Created")
+    @DisplayName("GET /ordens-servico/{id} - Deve permitir acesso público e retornar detalhes da OS")
+    void devePermitirAcessoPublicoParaBuscarOsPorId() throws Exception {
+        // Given
+        OrdemServico os = osRepository.save(new OrdemServico(cliente.getId(), veiculo.getId()));
+
+        // When & Then
+        mockMvc.perform(get("/api/v1/ordens-servico/{id}", os.getId())
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(os.getId().toString()))
+                .andExpect(jsonPath("$.cliente.nome").value(cliente.getNome()));
+    }
+
+    @Test
+    @DisplayName("GET /ordens-servico/{id} - Deve retornar 404 para OS inexistente")
+    void deveRetornarNotFoundParaOsInexistente() throws Exception {
+        mockMvc.perform(get("/api/v1/ordens-servico/{id}", UUID.randomUUID())
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("POST /ordens-servico - Deve criar uma OS com sucesso e retornar 201 Created")
     @WithMockUser(username = "admin")
     void deveCriarOSComSucesso() throws Exception {
+        // Given
         OrdemServicoRequestDTO request = new OrdemServicoRequestDTO(
-                clienteSalvo.getCpfCnpj(),
-                veiculoSalvo.getPlaca(),
-                List.of(servicoSalvo.getId()),
-                List.of(pecaSalva.getId())
+                cliente.getCpfCnpj(),
+                veiculo.getPlaca(),
+                List.of(servico.getId()),
+                List.of(peca.getId())
         );
 
+        // When & Then
         mockMvc.perform(post("/api/v1/ordens-servico")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
                 .andExpect(header().exists("Location"))
-                .andExpect(jsonPath("$.clienteNome").value(clienteSalvo.getNome()))
-                .andExpect(jsonPath("$.placaVeiculo").value(veiculoSalvo.getPlaca()))
+                .andExpect(jsonPath("$.clienteNome").value(cliente.getNome()))
+                .andExpect(jsonPath("$.placaVeiculo").value(veiculo.getPlaca()))
                 .andExpect(jsonPath("$.status").value("RECEBIDA"))
-                .andExpect(jsonPath("$.valorTotal").value(130.00)); // 80 (peça) + 50 (serviço)
+                .andExpect(jsonPath("$.valorTotal").value(130.00));
     }
 
     @Test
-    @DisplayName("Deve retornar 400 Bad Request ao tentar criar OS para cliente inexistente")
+    @DisplayName("GET /ordens-servico - Deve listar todas as OS")
     @WithMockUser(username = "admin")
-    void deveRetornarBadRequestParaClienteInexistente() throws Exception {
-        OrdemServicoRequestDTO request = new OrdemServicoRequestDTO(
-                "00000000000",
-                veiculoSalvo.getPlaca(),
-                Collections.emptyList(),
-                Collections.emptyList()
-        );
+    void deveListarTodasAsOS() throws Exception {
+        // Given
+        osRepository.save(new OrdemServico(cliente.getId(), veiculo.getId()));
+        osRepository.save(new OrdemServico(cliente.getId(), veiculo.getId()));
 
-        mockMvc.perform(post("/api/v1/ordens-servico")
+        // When & Then
+        mockMvc.perform(get("/api/v1/ordens-servico")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(2)));
+    }
+
+    @Test
+    @DisplayName("PATCH /ordens-servico/{id}/status - Deve atualizar o status com sucesso")
+    @WithMockUser(username = "admin")
+    void deveAtualizarStatusComSucesso() throws Exception {
+        // Given
+        OrdemServico os = osRepository.save(new OrdemServico(cliente.getId(), veiculo.getId()));
+        OrdemServicoStatusUpdateRequestDTO request = new OrdemServicoStatusUpdateRequestDTO(StatusOS.EM_DIAGNOSTICO);
+
+        // When & Then
+        mockMvc.perform(patch("/api/v1/ordens-servico/{id}/status", os.getId())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isNotFound());
-    }
-
-    @Test
-    @DisplayName("Deve permitir acesso público para buscar OS por ID")
-    void devePermitirAcessoPublicoParaBuscarOsPorId() throws Exception {
-        OrdemServico os = new OrdemServico(clienteSalvo, veiculoSalvo);
-        UUID osId = clienteRepository.save(clienteSalvo).getVeiculos().get(0).getId(); // Simulação, o ideal seria salvar a OS e pegar o ID
-
-        // Para este teste funcionar, precisamos de uma OS real no banco.
-        // A lógica de salvar a OS e obter o ID seria mais complexa.
-        // Este teste apenas valida a regra de segurança do endpoint.
-        // Uma forma seria criar a OS via API primeiro.
-
-        // Dado que não temos uma OS criada, esperamos um 404, mas sem erro 401/403 de autenticação.
-        mockMvc.perform(get("/api/v1/ordens-servico/{id}", UUID.randomUUID())
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status", is("EM_DIAGNOSTICO")));
     }
 }

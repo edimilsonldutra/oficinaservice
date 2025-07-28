@@ -1,63 +1,48 @@
-# Define a versão do Docker Compose a ser utilizada.
-version: '3.8'
-
-# Define os serviços (containers) que compõem a aplicação.
 services:
   # Serviço da aplicação Spring Boot
   app:
-    # Constrói a imagem a partir do Dockerfile no diretório atual ('.').
     build: .
     container_name: oficina-app
-    # Mapeia a porta 8080 do host para a porta 8080 do container.
     ports:
-      - "8080:8080"
-    # Define as variáveis de ambiente para o container da aplicação.
-    # Estas são usadas pelo Spring Boot para se conectar à base de dados.
+      - "8080:8080"  # Porta da aplicação
+      - "5005:5005"  # Porta de depuração
     environment:
+      - JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
+      - SPRING_PROFILES_ACTIVE=dev
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/oficinadb
       - SPRING_DATASOURCE_USERNAME=user
       - SPRING_DATASOURCE_PASSWORD=password
-      - JWT_SECRET=${JWT_SECRET} # Pega o valor da variável de ambiente do host.
-    # Define que este serviço depende do serviço 'db'.
+      - JWT_SECRET=${JWT_SECRET}
     depends_on:
       db:
-        # A aplicação só iniciará quando o healthcheck do serviço 'db' for bem-sucedido.
         condition: service_healthy
-    # Conecta este serviço à rede 'oficina-net'.
     networks:
       - oficina-net
 
   # Serviço do banco de dados PostgreSQL
   db:
-    # Utiliza a imagem oficial do PostgreSQL 14, versão Alpine (mais leve).
     image: postgres:14-alpine
     container_name: oficina-db
-    # Mapeia a porta 5432 do host para a 5432 do container para acesso externo opcional.
     ports:
       - "5432:5432"
-    # Define as variáveis de ambiente para configurar o container do PostgreSQL.
     environment:
       - POSTGRES_USER=user
       - POSTGRES_PASSWORD=password
       - POSTGRES_DB=oficinadb
-    # Monta um volume nomeado para persistir os dados do banco de dados.
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    # Define uma verificação de saúde para o container do banco de dados.
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U user -d oficinadb"]
       interval: 10s
       timeout: 5s
       retries: 5
-    # Conecta este serviço à rede 'oficina-net'.
     networks:
       - oficina-net
 
-# Declara os volumes nomeados que serão geridos pelo Docker.
-volumes:
-  postgres_data:
-
-# Declara as redes customizadas.
+# --- DEFINIÇÃO DA REDE (ESTA PARTE ESTAVA EM FALTA) ---
 networks:
   oficina-net:
     driver: bridge
+
+volumes:
+  postgres_data:

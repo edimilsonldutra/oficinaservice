@@ -17,7 +17,7 @@ A criação e atualização de status requerem autenticação via Token JWT. A c
 ### 1. Criar Ordem de Serviço
 **POST** `/api/v1/ordens-servico`
 
-Cria uma nova Ordem de Serviço.
+Cria uma nova Ordem de Serviço. A aplicação valida se o veículo pertence ao cliente informado.
 
 **Request Body:**
 ```json
@@ -66,10 +66,37 @@ Retorna os detalhes completos de uma OS. Este endpoint é público e não requer
     "dataCriacao": "2025-07-27T18:00:00",
     "dataFinalizacao": null,
     "dataEntrega": null,
-    "cliente": { ... },
-    "veiculo": { ... },
-    "servicos": [ ... ],
-    "pecas": [ ... ]
+    "cliente": {
+        "id": "c1b3a2d4-e5f6-7890-1234-567890abcdef",
+        "nome": "Carlos Andrade",
+        "cpfCnpj": "11144477735",
+        "email": "carlos.andrade@example.com",
+        "telefone": "11987654321"
+    },
+    "veiculo": {
+        "id": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+        "placa": "BRA2E19",
+        "renavam": "12345678901",
+        "marca": "Honda",
+        "modelo": "Civic",
+        "ano": 2022
+    },
+    "servicos": [
+        {
+            "id": "ID_DO_SERVICO_CRIADO_ANTERIORMENTE",
+            "descricao": "Troca de óleo e filtro do motor",
+            "preco": 350.00
+        }
+    ],
+    "pecas": [
+        {
+            "id": "ID_DA_PECA_CRIADA_ANTERIORMENTE",
+            "nome": "Filtro de Óleo Fram PH6017A",
+            "fabricante": "Fram",
+            "preco": 45.50,
+            "estoque": 19
+        }
+    ]
 }
 ```
 

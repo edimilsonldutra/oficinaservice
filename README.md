@@ -4,62 +4,41 @@
 
 Este projeto consiste num microsserviço robusto para a gestão de uma oficina mecânica, desenvolvido em **Java 21** com **Spring Boot 3**. O seu principal objetivo é gerir Ordens de Serviço (OS), Clientes, Veículos, Peças e Serviços, aplicando conceitos modernos de arquitetura de software para garantir escalabilidade, manutenibilidade e qualidade.
 
-A aplicação foi construída sobre os pilares da **Arquitetura Hexagonal (Portas e Adaptadores)** e do **Domain-Driven Design (DDD)**, o que garante um baixo acoplamento entre a lógica de negócio e as tecnologias de infraestrutura (como base de dados e frameworks web).
+A aplicação foi construída sobre os pilares da **Arquitetura Hexagonal (Portas e Adaptadores)** e do **Domain-Driven Design (DDD)**, o que garante um baixo acoplamento entre a lógica de negócio e as tecnologias de infraestrutura.
 
 ---
 
 ## 2. 🛠️ Conceitos e Tecnologias
 
-- **Arquitetura Hexagonal:** Isola o núcleo da aplicação (domínio e casos de uso) de detalhes externos. As "Portas" (interfaces no domínio) definem os contratos, e os "Adaptadores" (classes na infraestrutura) implementam esses contratos, conectando a aplicação ao mundo exterior (API REST, base de dados, etc.).
-- **Domain-Driven Design (DDD):** Foca em modelar o software para corresponder a um domínio de negócio. Utilizamos conceitos como Agregados (`OrdemServico`), Entidades, e Serviços de Domínio para criar um modelo rico e expressivo.
-- **Java 21 & Spring Boot 3:** Plataforma e framework principal para o desenvolvimento do back-end.
-- **PostgreSQL:** Base de dados relacional escolhida pela sua robustez, fiabilidade e funcionalidades avançadas.
-- **Spring Data JPA:** Para a camada de persistência de dados.
-- **Spring Security & JWT:** Para garantir a segurança da API através de autenticação e autorização baseadas em tokens.
-- **Docker & Docker Compose:** Para containerização da aplicação e orquestração do ambiente de desenvolvimento, garantindo uma configuração simples e consistente.
-- **Maven & JaCoCo:** Como ferramenta de gestão de dependências, build e relatório de cobertura de testes.
-- **Swagger (OpenAPI 3):** Para documentação interativa da API RESTful.
+- **Arquitetura Hexagonal:** Isola o núcleo da aplicação de detalhes externos. As "Portas" (interfaces no domínio) definem os contratos, e os "Adaptadores" (classes na infraestrutura) implementam esses contratos.
+- **Domain-Driven Design (DDD):** Foca em modelar o software para corresponder a um domínio de negócio. Utilizamos conceitos como Agregados, Entidades e Objetos de Valor.
+- **Java 21 & Spring Boot 3:** Plataforma e framework principal.
+- **PostgreSQL:** Base de dados relacional.
+- **Spring Data JPA:** Para a camada de persistência.
+- **Spring Security & JWT:** Para a segurança da API.
+- **Docker & Docker Compose:** Para containerização e orquestração do ambiente.
+- **Maven & JaCoCo:** Para gestão de dependências, build e relatório de cobertura de testes.
+- **Swagger (OpenAPI 3):** Para documentação interativa da API.
 
 ---
 
 ## 3. ✨ Funcionalidades Implementadas
 
-### Fluxos Principais
-- **Criação de Ordem de Serviço:**
-    - Identificação do cliente e do veículo.
-    - Adição de peças e serviços.
-    - Cálculo automático do orçamento.
-- **Acompanhamento da OS:**
-    - Gestão de status: `RECEBIDA`, `EM_DIAGNOSTICO`, `AGUARDANDO_APROVACAO`, `EM_EXECUCAO`, `FINALIZADA`, `ENTREGUE`.
-    - API pública para consulta de status por ID.
-
-### Gestão Administrativa (CRUDs)
-- Gestão completa de Clientes.
-- Gestão completa de Veículos.
-- Gestão completa de Peças (com controlo de stock).
-- Gestão completa de Serviços.
-
-### Segurança e Qualidade
-- Autenticação JWT para todos os endpoints administrativos.
-- Validação de dados de entrada nos DTOs.
-- Testes unitários e de integração para os principais fluxos.
+- **Fluxos Principais:** Criação e acompanhamento de Ordens de Serviço com gestão de status.
+- **Gestão Administrativa:** CRUDs completos para Clientes, Veículos, Peças e Serviços.
+- **Segurança e Qualidade:** Autenticação JWT, validação de dados sensíveis (CPF/CNPJ, Placa) e testes automatizados.
 
 ---
 
 ## 4. ✅ Pré-requisitos
 
-Para executar este projeto localmente, necessitará de ter instalado:
-
 - **Java 21** ou superior
 - **Maven 3.8** ou superior
-- **Docker**
-- **Docker Compose**
+- **Docker** & **Docker Compose**
 
 ---
 
 ## 5. 🚀 Como Executar o Projeto
-
-A forma mais simples de executar a aplicação é através do Docker Compose, que orquestra tanto o serviço da aplicação como a base de dados.
 
 ### Passo 1: Configurar a Variável de Ambiente JWT
 É uma boa prática de segurança fornecer o segredo do JWT através de uma variável de ambiente.
@@ -76,145 +55,75 @@ $env:JWT_SECRET="a29mYXNlNjRtdWl0b3NlZ3VyYWVzZWNyZXRhZG9zZWpjcmV0b2Rhb2ZpY2luYQ=
 *> Nota: Se esta variável não for definida, será utilizado um valor padrão não seguro, presente no ficheiro `docker-compose.yml`.*
 
 ### Passo 2: Iniciar os Containers
-Na raiz do projeto (onde se encontra o ficheiro `docker-compose.yml`), execute o seguinte comando:
+Na raiz do projeto, execute:
 ```bash
 docker-compose up --build
 ```
-Este comando irá:
-1. Construir a imagem Docker da aplicação Java (`oficina-app`).
-2. Descarregar a imagem do PostgreSQL (`oficina-db`).
-3. Iniciar ambos os containers numa rede dedicada, garantindo que a aplicação só arranca depois de a base de dados estar pronta.
 
 ### Passo 3: Aceder à Aplicação
-Após a inicialização, os seguintes serviços estarão disponíveis:
-
-- **API Principal:** `http://localhost:8080`
-- **Documentação Swagger UI:** `http://localhost:8080/swagger-ui.html`
+- **API:** `http://localhost:8080`
+- **Swagger UI:** `http://localhost:8080/swagger-ui.html`
 
 ### Passo 4: Utilizar a API
-1.  **Obter um Token de Autenticação:**
-    - Aceda à documentação do Swagger.
-    - Vá ao endpoint `POST /api/v1/auth/login`.
-    - Utilize o utilizador de demonstração:
-      ```json
-      {
-        "username": "admin",
-        "password": "password"
-      }
-      ```
-    - Copie o token JWT da resposta.
-
-2.  **Autorizar os Pedidos:**
-    - No topo direito da página Swagger, clique no botão "Authorize".
-    - Na janela que se abre, cole o token JWT no formato `Bearer <seu_token>`.
-    - Agora pode testar todos os endpoints protegidos.
+1.  **Obter Token:** Use o endpoint `POST /api/v1/auth/login` com o utilizador `admin` e a palavra-passe `password`.
+2.  **Autorizar:** Clique no botão "Authorize" no Swagger e cole o token no formato `Bearer <seu_token>`.
 
 ### Passo 5: Parar a Aplicação
-Para parar os containers, pressione `Ctrl + C` no terminal. Para os remover completamente (incluindo a rede), execute:
-```bash
-docker-compose down
-```
-Para remover também os dados persistidos da base de dados:
-```bash
-docker-compose down -v
-```
+Pressione `Ctrl + C` no terminal e depois execute `docker-compose down -v` para uma limpeza completa.
 
 ---
 
 ## 6. 📊 Gerando Relatório de Cobertura de Testes (JaCoCo)
 
-O projeto está configurado com o plugin JaCoCo para medir a cobertura dos testes automatizados. Para gerar o relatório, execute o seguinte comando Maven na raiz do projeto (não precisa de ter o Docker a correr):
-
+Para gerar o relatório de cobertura, execute o seguinte comando na raiz do projeto:
 ```bash
 mvn clean verify
 ```
-
-Este comando irá:
-1. Limpar o projeto (`clean`).
-2. Executar todos os testes unitários e de integração (`verify`).
-3. Gerar o relatório de cobertura do JaCoCo.
-
-Após a execução, o relatório estará disponível no seguinte ficheiro. Pode abri-lo diretamente no seu navegador:
-
-`target/site/jacoco/index.html`
-
-O relatório interativo mostrará a percentagem de cobertura por classe, método e linha, ajudando a identificar áreas do código que necessitam de mais testes para atingir a meta de 80%.
+O relatório estará disponível em `target/site/jacoco/index.html`.
 
 ---
 
-## 7. 📁 Estrutura do Projeto
+## 7. 🏛️ Arquitetura de Agregados (DDD)
 
-O projeto segue a estrutura da Arquitetura Hexagonal, que promove a separação de responsabilidades:
+O design do domínio foi refinado para seguir as melhores práticas de DDD, focando em agregados pequenos e independentes para garantir transações atómicas e baixo acoplamento.
+
+- **Agregado `OrdemDeServico` (Raiz):**
+  - **Entidades Internas:** `ItemServico`, `ItemPeca`.
+  - **Referências (IDs):** `clienteId`, `veiculoId`.
+  - **Regra:** A `OrdemDeServico` não contém os objetos `Cliente` e `Veiculo` completos, apenas os seus IDs. Isto mantém o agregado coeso e as transações focadas. A validação de que o veículo pertence ao cliente é feita na camada de aplicação.
+
+- **Agregado `Cliente` (Raiz):**
+  - Entidade principal com o seu próprio ciclo de vida.
+
+- **Agregado `Veiculo` (Raiz):**
+  - Entidade principal com o seu próprio ciclo de vida. Referencia o `clienteId`.
+
+- **Outros Agregados:** `Peca` e `Servico` também são raízes dos seus próprios agregados.
+
+---
+
+## 8. 📁 Estrutura do Projeto
+
 ```plaintext
 oficina-service/
 └── src/
     └── main/
         ├── java/
-        │   └── br/com/grupo/oficinaservice/
+        │   └── br/com/grupo99/oficinaservice/
         │       ├── domain/
-        │       │   ├── model/
-        │       │   │   ├── Cliente.java
-        │       │   │   ├── ItemPeca.java
-        │       │   │   ├── ItemServico.java
-        │       │   │   ├── OrdemServico.java (Aggregate Root)
-        │       │   │   ├── Peca.java
-        │       │   │   ├── Servico.java
-        │       │   │   ├── StatusOS.java
-        │       │   │   └── Veiculo.java
-        │       │   ├── repository/ (Ports)
-        │       │   │   ├── ClienteRepository.java
-        │       │   │   ├── OrdemServicoRepository.java
-        │       │   │   ├── PecaRepository.java
-        │       │   │   ├── ServicoRepository.java
-        │       │   │   └── VeiculoRepository.java
-        │       │   └── service/
-        │       │       └── OrcamentoService.java
+        │       │   ├── model/ (Entidades e Objetos de Valor)
+        │       │   ├── repository/ (Interfaces/Ports)
+        │       │   └── service/ (Serviços de Domínio)
         │       ├── application/
-        │       │   ├── dto/
-        │       │   │   ├── ClienteDTOs.java
-        │       │   │   ├── OrdemServicoDTOs.java
-        │       │   │   ├── PecaDTOs.java
-        │       │   │   ├── ServicoDTOs.java
-        │       │   │   └── VeiculoDTOs.java
-        │       │   ├── exception/
-        │       │   │   ├── BusinessException.java
-        │       │   │   └── ResourceNotFoundException.java
-        │       │   ├── service/ (Use Case Implementations)
-        │       │   │   ├── ClienteApplicationService.java
-        │       │   │   ├── OrdemServicoApplicationService.java
-        │       │   │   ├── PecaApplicationService.java
-        │       │   │   ├── ServicoApplicationService.java
-        │       │   │   └── VeiculoApplicationService.java
-        │       │   └── usecase/ (Use Case Interfaces)
-        │       │       ├── AcompanharOrdemServicoUseCase.java
-        │       │       ├── AutenticarUsuarioUseCase.java
-        │       │       ├── ... (e outros casos de uso)
+        │       │   ├── dto/ (Data Transfer Objects)
+        │       │   ├── exception/ (Exceções Customizadas)
+        │       │   ├── service/ (Implementação dos Casos de Uso)
+        │       │   ├── usecase/ (Interfaces dos Casos de Uso)
+        │       │   └── validator/ (Validadores Customizados)
         │       └── infrastructure/
-        │           ├── config/
-        │           │   ├── OpenApiConfig.java
-        │           │   └── SecurityConfig.java
-        │           ├── persistence/ (Adapters)
-        │           │   ├── jpa/
-        │           │   │   ├── ClienteJpaRepository.java
-        │           │   │   ├── OrdemServicoJpaRepository.java
-        │           │   │   ├── ... (e outros repositórios JPA)
-        │           │   └── repository/
-        │           │       ├── ClienteRepositoryImpl.java
-        │           │       ├── OrdemServicoRepositoryImpl.java
-        │           │       ├── ... (e outras implementações)
-        │           ├── rest/ (Adapters)
-        │           │   ├── AuthController.java
-        │           │   ├── ClienteController.java
-        │           │   ├── OrdemServicoController.java
-        │           │   ├── PecaController.java
-        │           │   ├── ServicoController.java
-        │           │   └── VeiculoController.java
-        │           └── security/
-        │               ├── jwt/
-        │               │   ├── AuthRequest.java
-        │               │   ├── AuthResponse.java
-        │               │   ├── JwtRequestFilter.java
-        │               │   └── JwtUtil.java
-        │               └── UserDetailsServiceImpl.java
+        │           ├── config/ (Configurações do Spring)
+        │           ├── persistence/ (Adaptadores de Persistência)
+        │           ├── rest/ (Controllers da API)
+        │           └── security/ (Configuração do JWT)
         └── resources/
             └── application.properties

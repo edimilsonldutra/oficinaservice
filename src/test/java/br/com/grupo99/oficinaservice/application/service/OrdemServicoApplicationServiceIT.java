@@ -1,9 +1,9 @@
 package br.com.grupo99.oficinaservice.application.service;
 
+import br.com.grupo99.oficinaservice.application.dto.OrdemServicoDetalhesDTO;
 import br.com.grupo99.oficinaservice.application.dto.OrdemServicoRequestDTO;
 import br.com.grupo99.oficinaservice.application.dto.OrdemServicoResponseDTO;
 import br.com.grupo99.oficinaservice.application.exception.BusinessException;
-import br.com.grupo99.oficinaservice.application.exception.ResourceNotFoundException;
 import br.com.grupo99.oficinaservice.domain.model.*;
 import br.com.grupo99.oficinaservice.domain.repository.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,7 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -25,21 +24,15 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @SpringBootTest
 @ActiveProfiles("test")
 @Transactional
-@DisplayName("Teste de Integração Completo - OrdemServicoApplicationService")
+@DisplayName("Teste de Integração BDD - OrdemServicoApplicationService")
 class OrdemServicoApplicationServiceIT {
 
-    @Autowired
-    private OrdemServicoApplicationService osService;
-    @Autowired
-    private ClienteRepository clienteRepository;
-    @Autowired
-    private VeiculoRepository veiculoRepository;
-    @Autowired
-    private PecaRepository pecaRepository;
-    @Autowired
-    private ServicoRepository servicoRepository;
-    @Autowired
-    private OrdemServicoRepository osRepository;
+    @Autowired private OrdemServicoApplicationService osService;
+    @Autowired private ClienteRepository clienteRepository;
+    @Autowired private VeiculoRepository veiculoRepository;
+    @Autowired private PecaRepository pecaRepository;
+    @Autowired private ServicoRepository servicoRepository;
+    @Autowired private OrdemServicoRepository osRepository;
 
     private Cliente cliente;
     private Veiculo veiculo;
@@ -48,7 +41,7 @@ class OrdemServicoApplicationServiceIT {
 
     @BeforeEach
     void setUp() {
-        cliente = new Cliente("Cliente OS", "333.333.333-33");
+        cliente = new Cliente("Cliente OS", "33333333333");
         veiculo = new Veiculo("OS-1234", "Ford", "Ka", 2018);
         veiculo.setCliente(cliente);
         cliente.getVeiculos().add(veiculo);
@@ -68,53 +61,93 @@ class OrdemServicoApplicationServiceIT {
     }
 
     @Test
-    @DisplayName("Deve criar uma Ordem de Serviço com sucesso")
-    void deveCriarOsComSucesso() {
-        OrdemServicoRequestDTO request = new OrdemServicoRequestDTO(
-                cliente.getCpfCnpj(),
-                veiculo.getPlaca(),
-                List.of(servico.getId()),
-                List.of(peca.getId())
-        );
+    @DisplayName("Dado um DTO de OS válido, Quando criar, Então a OS deve ser salva com os IDs corretos")
+    void givenValidOsRequest_whenCreate_thenShouldSaveOs() {
+        // Given
+        OrdemServicoRequestDTO request = new OrdemServicoRequestDTO(cliente.getCpfCnpj(), veiculo.getPlaca(), List.of(servico.getId()), List.of(peca.getId()));
 
+        // When
         OrdemServicoResponseDTO response = osService.execute(request);
 
+        // Then
         assertThat(response).isNotNull();
         assertThat(response.status()).isEqualTo(StatusOS.RECEBIDA);
         assertThat(response.valorTotal()).isEqualByComparingTo(new BigDecimal("300.00"));
-        assertThat(osRepository.findAll()).hasSize(1);
+
+        OrdemServico osSalva = osRepository.findById(response.id()).get();
+        assertThat(osSalva.getClienteId()).isEqualTo(cliente.getId());
+        assertThat(osSalva.getVeiculoId()).isEqualTo(veiculo.getId());
     }
 
     @Test
-    @DisplayName("Deve lançar exceção ao criar OS com peça inexistente")
-    void deveLancarExcecaoComPecaInexistente() {
-        OrdemServicoRequestDTO request = new OrdemServicoRequestDTO(
-                cliente.getCpfCnpj(),
-                veiculo.getPlaca(),
-                Collections.emptyList(),
-                List.of(UUID.randomUUID())
-        );
+    @DisplayName("Dado um veículo que não pertence ao cliente, Quando criar OS, Então deve lançar BusinessException")
+    void givenVeiculoFromAnotherCliente_whenCreateOs_thenShouldThrowBusinessException() {
+        // Given
+        Cliente outroCliente = clienteRepository.save(new Cliente("Outro Cliente", "44444444444"));
 
-        assertThrows(ResourceNotFoundException.class, () -> osService.execute(request));
+        OrdemServicoRequestDTO osRequest = new OrdemServicoRequestDTO(outroCliente.getCpfCnpj(), veiculo.getPlaca(), Collections.emptyList(), Collections.emptyList());
+
+        // When & Then
+        BusinessException exception = assertThrows(BusinessException.class, () -> osService.execute(osRequest));
+        assertThat(exception.getMessage()).isEqualTo("A placa informada não pertence ao cliente.");
     }
 
     @Test
-    @DisplayName("Deve atualizar o status de uma OS corretamente")
-    void deveAtualizarStatusDaOs() {
-        OrdemServico os = osRepository.save(new OrdemServico(cliente, veiculo));
+    @DisplayName("Dado uma OS existente, Quando buscar por ID, Então deve retornar os detalhes completos")
+    void givenExistingOs_whenGetById_thenShouldReturnDetails() {
+        // Given
+        OrdemServico os = new OrdemServico(cliente.getId(), veiculo.getId());
+        os.adicionarPeca(peca, 1);
+        os = osRepository.save(os);
 
+        // When
+        OrdemServicoDetalhesDTO detalhes = osService.execute(os.getId());
+
+        // Then
+        assertThat(detalhes).isNotNull();
+        assertThat(detalhes.cliente().id()).isEqualTo(cliente.getId());
+        assertThat(detalhes.veiculo().id()).isEqualTo(veiculo.getId());
+        assertThat(detalhes.pecas()).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("Dado que existem Ordens de Serviço, Quando listar todas, Então deve retornar a lista de OS")
+    void givenOsExists_whenGetAll_thenShouldReturnOsList() {
+        // Given
+        osRepository.save(new OrdemServico(cliente.getId(), veiculo.getId()));
+        osRepository.save(new OrdemServico(cliente.getId(), veiculo.getId()));
+
+        // When
+        List<OrdemServicoResponseDTO> lista = osService.execute();
+
+        // Then
+        assertThat(lista).hasSize(2);
+    }
+
+    @Test
+    @DisplayName("Dado uma OS existente, Quando atualizar o status para um estado válido, Então o status deve ser atualizado")
+    void givenExistingOs_whenUpdateStatusToValidState_thenShouldUpdateStatus() {
+        // Given
+        OrdemServico os = osRepository.save(new OrdemServico(cliente.getId(), veiculo.getId())); // Status inicial: RECEBIDA
+
+        // When
         osService.execute(os.getId(), StatusOS.EM_DIAGNOSTICO);
-        osService.execute(os.getId(), StatusOS.AGUARDANDO_APROVACAO);
-        OrdemServicoResponseDTO response = osService.execute(os.getId(), StatusOS.EM_EXECUCAO);
+        OrdemServicoResponseDTO response = osService.execute(os.getId(), StatusOS.AGUARDANDO_APROVACAO);
 
-        assertThat(response.status()).isEqualTo(StatusOS.EM_EXECUCAO);
+        // Then
+        assertThat(response.status()).isEqualTo(StatusOS.AGUARDANDO_APROVACAO);
     }
 
     @Test
-    @DisplayName("Deve lançar exceção ao tentar uma transição de status inválida")
-    void deveLancarExcecaoEmTransicaoDeStatusInvalida() {
-        OrdemServico os = osRepository.save(new OrdemServico(cliente, veiculo));
+    @DisplayName("Dado uma OS existente, Quando atualizar o status para um estado inválido, Então deve lançar BusinessException")
+    void givenExistingOs_whenUpdateStatusToInvalidState_thenShouldThrowBusinessException() {
+        // Given
+        OrdemServico os = osRepository.save(new OrdemServico(cliente.getId(), veiculo.getId())); // Status inicial: RECEBIDA
 
-        assertThrows(BusinessException.class, () -> osService.execute(os.getId(), StatusOS.EM_EXECUCAO));
+        // When & Then
+        BusinessException exception = assertThrows(BusinessException.class, () -> {
+            osService.execute(os.getId(), StatusOS.FINALIZADA); // Não pode ir de RECEBIDA para FINALIZADA
+        });
+        assertThat(exception.getMessage()).contains("OS não pode ser finalizada pois não está em execução");
     }
 }

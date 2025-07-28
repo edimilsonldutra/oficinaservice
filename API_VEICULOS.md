@@ -22,24 +22,24 @@ Cria um novo veículo e o associa a um cliente existente.
 **Request Body:**
 ```json
 {
-    "placa": "BRA2E19",
-    "renavam": "12345678901",
-    "marca": "Honda",
-    "modelo": "Civic",
-    "ano": 2022,
-    "clienteId": "c1b3a2d4-e5f6-7890-1234-567890abcdef"
+  "placa": "BRA2E19",
+  "renavam": "12345678901",
+  "marca": "Honda",
+  "modelo": "Civic",
+  "ano": 2022,
+  "clienteId": "c1b3a2d4-e5f6-7890-1234-567890abcdef"
 }
 ```
 
 **Response (201 Created):**
 ```json
 {
-    "id": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
-    "placa": "BRA2E19",
-    "renavam": "12345678901",
-    "marca": "Honda",
-    "modelo": "Civic",
-    "ano": 2022
+  "id": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+  "placa": "BRA2E19",
+  "renavam": "12345678901",
+  "marca": "Honda",
+  "modelo": "Civic",
+  "ano": 2022
 }
 ```
 
@@ -51,14 +51,14 @@ Retorna uma lista de todos os veículos cadastrados.
 **Response (200 OK):**
 ```json
 [
-    {
-        "id": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
-        "placa": "BRA2E19",
-        "renavam": "12345678901",
-        "marca": "Honda",
-        "modelo": "Civic",
-        "ano": 2022
-    }
+  {
+    "id": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+    "placa": "BRA2E19",
+    "renavam": "12345678901",
+    "marca": "Honda",
+    "modelo": "Civic",
+    "ano": 2022
+  }
 ]
 ```
 
@@ -77,12 +77,12 @@ Atualiza os dados de um veículo existente.
 **Request Body:**
 ```json
 {
-    "placa": "BRA2E19",
-    "renavam": "12345678901",
-    "marca": "Honda",
-    "modelo": "Civic Touring",
-    "ano": 2023,
-    "clienteId": "c1b3a2d4-e5f6-7890-1234-567890abcdef"
+  "placa": "BRA2E19",
+  "renavam": "12345678901",
+  "marca": "Honda",
+  "modelo": "Civic Touring",
+  "ano": 2023,
+  "clienteId": "c1b3a2d4-e5f6-7890-1234-567890abcdef"
 }
 ```
 

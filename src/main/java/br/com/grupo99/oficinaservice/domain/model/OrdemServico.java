@@ -16,13 +16,11 @@ public class OrdemServico {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @ManyToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "cliente_id", nullable = false)
-    private Cliente cliente;
+    @Column(nullable = false)
+    private UUID clienteId;
 
-    @ManyToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "veiculo_id", nullable = false)
-    private Veiculo veiculo;
+    @Column(nullable = false)
+    private UUID veiculoId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -47,9 +45,9 @@ public class OrdemServico {
     public OrdemServico() {
     }
 
-    public OrdemServico(Cliente cliente, Veiculo veiculo) {
-        this.cliente = cliente;
-        this.veiculo = veiculo;
+    public OrdemServico(UUID clienteId, UUID veiculoId) {
+        this.clienteId = clienteId;
+        this.veiculoId = veiculoId;
         this.status = StatusOS.RECEBIDA;
         this.dataCriacao = LocalDateTime.now();
         this.valorTotal = BigDecimal.ZERO;
@@ -124,10 +122,15 @@ public class OrdemServico {
     // Getters e Setters
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
-    public Cliente getCliente() { return cliente; }
-    public void setCliente(Cliente cliente) { this.cliente = cliente; }
-    public Veiculo getVeiculo() { return veiculo; }
-    public void setVeiculo(Veiculo veiculo) { this.veiculo = veiculo; }
+
+    public UUID getClienteId() { return clienteId;}
+
+    public void setClienteId(UUID clienteId) { this.clienteId = clienteId; }
+
+    public UUID getVeiculoId() { return veiculoId; }
+
+    public void setVeiculoId(UUID veiculoId) { this.veiculoId = veiculoId; }
+
     public StatusOS getStatus() { return status; }
     public void setStatus(StatusOS status) { this.status = status; }
     public List<ItemServico> getServicos() { return servicos; }

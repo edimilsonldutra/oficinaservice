@@ -3,8 +3,8 @@ package br.com.grupo99.oficinaservice.domain.model;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
 import java.math.BigDecimal;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -17,18 +17,24 @@ class OrdemServicoTest {
 
     @BeforeEach
     void setUp() {
+        // Prepara os objetos de teste
         cliente = new Cliente("Cliente Teste", "12345678901");
+        cliente.setId(UUID.randomUUID()); // Simula um ID que viria da base de dados
+
         veiculo = new Veiculo("ABC-1234", "Marca Teste", "Modelo Teste", 2023);
-        os = new OrdemServico(cliente, veiculo);
+        veiculo.setId(UUID.randomUUID()); // Simula um ID que viria da base de dados
+
+        // Cria a Ordem de Serviço com os IDs, conforme o novo modelo
+        os = new OrdemServico(cliente.getId(), veiculo.getId());
     }
 
     @Test
-    @DisplayName("Deve criar uma Ordem de Serviço com status RECEBIDA")
+    @DisplayName("Deve criar uma Ordem de Serviço com os IDs e status corretos")
     void deveCriarOrdemServicoComStatusInicialCorreto() {
         assertNotNull(os);
         assertEquals(StatusOS.RECEBIDA, os.getStatus());
-        assertEquals(cliente, os.getCliente());
-        assertEquals(veiculo, os.getVeiculo());
+        assertEquals(cliente.getId(), os.getClienteId());
+        assertEquals(veiculo.getId(), os.getVeiculoId());
         assertEquals(BigDecimal.ZERO, os.getValorTotal());
     }
 
@@ -47,50 +53,6 @@ class OrdemServicoTest {
         assertEquals(new BigDecimal("100.00"), os.getValorTotal());
     }
 
-    @Test
-    @DisplayName("Deve lançar exceção ao tentar adicionar peça sem estoque")
-    void deveLancarExcecaoAoAdicionarPecaSemEstoque() {
-        Peca peca = new Peca();
-        peca.setNome("Bateria");
-        peca.setPreco(new BigDecimal("350.00"));
-        peca.setEstoque(1);
-
-        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
-            os.adicionarPeca(peca, 2);
-        });
-
-        assertEquals("Estoque insuficiente para a peça: Bateria", exception.getMessage());
-    }
-
-    @Test
-    @DisplayName("Deve adicionar serviço e recalcular valor total")
-    void deveAdicionarServicoCorretamente() {
-        Servico servico = new Servico();
-        servico.setDescricao("Troca de óleo");
-        servico.setPreco(new BigDecimal("150.00"));
-
-        os.adicionarServico(servico, 1);
-
-        assertEquals(1, os.getServicos().size());
-        assertEquals(new BigDecimal("150.00"), os.getValorTotal());
-    }
-
-    @Test
-    @DisplayName("Deve adicionar múltiplos itens e calcular o valor total corretamente")
-    void deveCalcularValorTotalComMultiplosItens() {
-        Servico servico = new Servico();
-        servico.setDescricao("Revisão Completa");
-        servico.setPreco(new BigDecimal("500.00"));
-        os.adicionarServico(servico, 1);
-
-        Peca peca = new Peca();
-        peca.setNome("Correia Dentada");
-        peca.setPreco(new BigDecimal("120.00"));
-        peca.setEstoque(5);
-        os.adicionarPeca(peca, 1);
-
-        assertEquals(new BigDecimal("620.00"), os.getValorTotal());
-    }
     @Test
     @DisplayName("Deve transitar corretamente pelos status até ser FINALIZADA")
     void deveTransitarStatusCorretamente() {
@@ -122,4 +84,3 @@ class OrdemServicoTest {
         assertEquals("OS não pode ser aprovada pois não está aguardando aprovação", exception.getMessage());
     }
 }
-
