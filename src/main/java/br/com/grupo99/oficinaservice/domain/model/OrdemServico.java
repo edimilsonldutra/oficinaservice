@@ -1,7 +1,6 @@
 package br.com.grupo99.oficinaservice.domain.model;
 
 import jakarta.persistence.*;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -41,7 +40,6 @@ public class OrdemServico {
     private LocalDateTime dataFinalizacao;
     private LocalDateTime dataEntrega;
 
-    // Construtores
     public OrdemServico() {
     }
 
@@ -53,11 +51,11 @@ public class OrdemServico {
         this.valorTotal = BigDecimal.ZERO;
     }
 
-    // Métodos de negócio
+    // --- Métodos de Negócio ---
+
     public void adicionarServico(Servico servico, Integer quantidade) {
         ItemServico item = new ItemServico(servico, quantidade);
         this.servicos.add(item);
-        recalcularValorTotal();
     }
 
     public void adicionarPeca(Peca peca, Integer quantidade) {
@@ -67,19 +65,6 @@ public class OrdemServico {
         ItemPeca item = new ItemPeca(peca, quantidade);
         this.pecas.add(item);
         peca.baixarEstoque(quantidade);
-        recalcularValorTotal();
-    }
-
-    public void recalcularValorTotal() {
-        BigDecimal totalServicos = servicos.stream()
-                .map(ItemServico::getValorTotal)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        BigDecimal totalPecas = pecas.stream()
-                .map(ItemPeca::getValorTotal)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        this.valorTotal = totalServicos.add(totalPecas);
     }
 
     public void iniciarDiagnostico() {
@@ -119,34 +104,90 @@ public class OrdemServico {
         this.dataEntrega = LocalDateTime.now();
     }
 
-    // Getters e Setters
-    public UUID getId() { return id; }
-    public void setId(UUID id) { this.id = id; }
+    // --- Getters e Setters ---
 
-    public UUID getClienteId() { return clienteId;}
+    public UUID getId() {
+        return id;
+    }
 
-    public void setClienteId(UUID clienteId) { this.clienteId = clienteId; }
+    public void setId(UUID id) {
+        this.id = id;
+    }
 
-    public UUID getVeiculoId() { return veiculoId; }
+    public UUID getClienteId() {
+        return clienteId;
+    }
 
-    public void setVeiculoId(UUID veiculoId) { this.veiculoId = veiculoId; }
+    public void setClienteId(UUID clienteId) {
+        this.clienteId = clienteId;
+    }
 
-    public StatusOS getStatus() { return status; }
-    public void setStatus(StatusOS status) { this.status = status; }
-    public List<ItemServico> getServicos() { return servicos; }
-    public void setServicos(List<ItemServico> servicos) { this.servicos = servicos; }
-    public List<ItemPeca> getPecas() { return pecas; }
-    public void setPecas(List<ItemPeca> pecas) { this.pecas = pecas; }
-    public BigDecimal getValorTotal() { return valorTotal; }
-    public void setValorTotal(BigDecimal valorTotal) { this.valorTotal = valorTotal; }
-    public LocalDateTime getDataCriacao() { return dataCriacao; }
-    public void setDataCriacao(LocalDateTime dataCriacao) { this.dataCriacao = dataCriacao; }
-    public LocalDateTime getDataFinalizacao() { return dataFinalizacao; }
-    public void setDataFinalizacao(LocalDateTime dataFinalizacao) { this.dataFinalizacao = dataFinalizacao; }
-    public LocalDateTime getDataEntrega() { return dataEntrega; }
-    public void setDataEntrega(LocalDateTime dataEntrega) { this.dataEntrega = dataEntrega; }
+    public UUID getVeiculoId() {
+        return veiculoId;
+    }
 
-    // Equals e HashCode
+    public void setVeiculoId(UUID veiculoId) {
+        this.veiculoId = veiculoId;
+    }
+
+    public StatusOS getStatus() {
+        return status;
+    }
+
+    public void setStatus(StatusOS status) {
+        this.status = status;
+    }
+
+    public List<ItemServico> getServicos() {
+        return servicos;
+    }
+
+    public void setServicos(List<ItemServico> servicos) {
+        this.servicos = servicos;
+    }
+
+    public List<ItemPeca> getPecas() {
+        return pecas;
+    }
+
+    public void setPecas(List<ItemPeca> pecas) {
+        this.pecas = pecas;
+    }
+
+    public BigDecimal getValorTotal() {
+        return valorTotal;
+    }
+
+    public void setValorTotal(BigDecimal valorTotal) {
+        this.valorTotal = valorTotal;
+    }
+
+    public LocalDateTime getDataCriacao() {
+        return dataCriacao;
+    }
+
+    public void setDataCriacao(LocalDateTime dataCriacao) {
+        this.dataCriacao = dataCriacao;
+    }
+
+    public LocalDateTime getDataFinalizacao() {
+        return dataFinalizacao;
+    }
+
+    public void setDataFinalizacao(LocalDateTime dataFinalizacao) {
+        this.dataFinalizacao = dataFinalizacao;
+    }
+
+    public LocalDateTime getDataEntrega() {
+        return dataEntrega;
+    }
+
+    public void setDataEntrega(LocalDateTime dataEntrega) {
+        this.dataEntrega = dataEntrega;
+    }
+
+    // --- Equals, HashCode e ToString ---
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -160,14 +201,14 @@ public class OrdemServico {
         return Objects.hash(id);
     }
 
-    // ToString
     @Override
     public String toString() {
         return "OrdemServico{" +
                 "id=" + id +
+                ", clienteId=" + clienteId +
+                ", veiculoId=" + veiculoId +
                 ", status=" + status +
                 ", valorTotal=" + valorTotal +
-                ", dataCriacao=" + dataCriacao +
                 '}';
     }
 }

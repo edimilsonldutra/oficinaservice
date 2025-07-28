@@ -39,18 +39,22 @@ class OrdemServicoTest {
     }
 
     @Test
-    @DisplayName("Deve adicionar peça, baixar estoque e recalcular valor total")
-    void deveAdicionarPecaCorretamente() {
+    @DisplayName("Deve adicionar peça à lista e baixar o estoque, sem alterar o valor total")
+    void deveAdicionarPecaEBaixarEstoque() {
+        // Given
         Peca peca = new Peca();
         peca.setNome("Filtro de Óleo");
         peca.setPreco(new BigDecimal("50.00"));
         peca.setEstoque(10);
 
+        // When
         os.adicionarPeca(peca, 2);
 
+        // Then
         assertEquals(1, os.getPecas().size());
         assertEquals(8, peca.getEstoque());
-        assertEquals(new BigDecimal("100.00"), os.getValorTotal());
+        // O valor total não é mais responsabilidade da entidade, então deve permanecer zero.
+        assertEquals(BigDecimal.ZERO, os.getValorTotal());
     }
 
     @Test

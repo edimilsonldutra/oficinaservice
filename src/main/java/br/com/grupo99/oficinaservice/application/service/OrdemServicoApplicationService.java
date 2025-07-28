@@ -10,12 +10,13 @@ import br.com.grupo99.oficinaservice.application.usecase.BuscarOrdemServicoDetal
 import br.com.grupo99.oficinaservice.application.usecase.CriarOrdemServicoUseCase;
 import br.com.grupo99.oficinaservice.application.usecase.ListarOrdensServicoUseCase;
 
-
 import br.com.grupo99.oficinaservice.domain.model.*;
 import br.com.grupo99.oficinaservice.domain.repository.*;
+import br.com.grupo99.oficinaservice.domain.service.OrcamentoService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -28,31 +29,38 @@ public class OrdemServicoApplicationService implements CriarOrdemServicoUseCase,
     private final VeiculoRepository veiculoRepository;
     private final PecaRepository pecaRepository;
     private final ServicoRepository servicoRepository;
+    private final OrcamentoService orcamentoService; // Instanciado diretamente
 
-    public OrdemServicoApplicationService(OrdemServicoRepository ordemServicoRepository, ClienteRepository clienteRepository, VeiculoRepository veiculoRepository, PecaRepository pecaRepository, ServicoRepository servicoRepository) {
+    public OrdemServicoApplicationService(
+            OrdemServicoRepository ordemServicoRepository,
+            ClienteRepository clienteRepository,
+            VeiculoRepository veiculoRepository,
+            PecaRepository pecaRepository,
+            ServicoRepository servicoRepository
+    ) {
         this.ordemServicoRepository = ordemServicoRepository;
         this.clienteRepository = clienteRepository;
         this.veiculoRepository = veiculoRepository;
         this.pecaRepository = pecaRepository;
         this.servicoRepository = servicoRepository;
+        this.orcamentoService = new OrcamentoService();
     }
 
     @Override
     @Transactional
     public OrdemServicoResponseDTO execute(OrdemServicoRequestDTO request) {
-        // 1. Busca as entidades completas a partir dos identificadores
+        // 1. Busca e valida as entidades
         Cliente cliente = clienteRepository.findByCpfCnpj(request.cpfCnpjCliente())
                 .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado"));
 
         Veiculo veiculo = veiculoRepository.findByPlaca(request.placaVeiculo())
                 .orElseThrow(() -> new ResourceNotFoundException("Veículo não encontrado"));
 
-        // Validação de negócio: o veículo pertence ao cliente?
         if (veiculo.getCliente() == null || !veiculo.getCliente().getId().equals(cliente.getId())) {
             throw new BusinessException("A placa informada não pertence ao cliente.");
         }
 
-        // 2. Cria o agregado OrdemServico usando os IDs
+        // 2. Cria o agregado OrdemServico
         OrdemServico os = new OrdemServico(cliente.getId(), veiculo.getId());
 
         // 3. Adiciona peças e serviços
@@ -63,7 +71,6 @@ public class OrdemServicoApplicationService implements CriarOrdemServicoUseCase,
                 os.adicionarServico(servico, 1);
             });
         }
-
         if (request.pecasIds() != null) {
             request.pecasIds().forEach(pecaId -> {
                 Peca peca = pecaRepository.findById(pecaId)
@@ -72,10 +79,14 @@ public class OrdemServicoApplicationService implements CriarOrdemServicoUseCase,
             });
         }
 
-        // 4. Salva o agregado
+        // 4. USA O SERVIÇO DE DOMÍNIO para calcular o valor
+        BigDecimal valorCalculado = orcamentoService.calcularValorTotal(os);
+        os.setValorTotal(valorCalculado);
+
+        // 5. Salva o agregado
         OrdemServico osSalva = ordemServicoRepository.save(os);
 
-        // 5. Retorna o DTO
+        // 6. Retorna o DTO
         return OrdemServicoResponseDTO.fromDomain(osSalva, cliente.getNome(), veiculo.getPlaca());
     }
 
@@ -83,7 +94,6 @@ public class OrdemServicoApplicationService implements CriarOrdemServicoUseCase,
     @Transactional(readOnly = true)
     public List<OrdemServicoResponseDTO> execute() {
         List<OrdemServico> ordens = ordemServicoRepository.findAll();
-
         return ordens.stream().map(os -> {
             Cliente cliente = clienteRepository.findById(os.getClienteId()).orElse(null);
             Veiculo veiculo = veiculoRepository.findById(os.getVeiculoId()).orElse(null);
@@ -131,7 +141,6 @@ public class OrdemServicoApplicationService implements CriarOrdemServicoUseCase,
 
         OrdemServico osSalva = ordemServicoRepository.save(os);
 
-        // Busca os dados para o DTO de resposta
         Cliente cliente = clienteRepository.findById(osSalva.getClienteId())
                 .orElseThrow(() -> new ResourceNotFoundException("Cliente associado à OS não encontrado"));
         Veiculo veiculo = veiculoRepository.findById(osSalva.getVeiculoId())
