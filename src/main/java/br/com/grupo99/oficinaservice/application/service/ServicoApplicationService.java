@@ -27,29 +27,24 @@ public class ServicoApplicationService implements GerenciarServicoUseCase {
     @Override
     @Transactional
     public ServicoResponseDTO create(ServicoRequestDTO requestDTO) {
-        Servico servico = new Servico();
-        servico.setDescricao(requestDTO.descricao());
-        servico.setPreco(requestDTO.preco());
-        return ServicoResponseDTO.fromDomain(servicoRepository.save(servico));
+        Servico servico = construirServico(requestDTO);
+        Servico salvo = servicoRepository.save(servico);
+        return ServicoResponseDTO.fromDomain(salvo);
     }
 
     @Override
     @Transactional
     public ServicoResponseDTO update(UUID id, ServicoRequestDTO requestDTO) {
-        Servico servico = servicoRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Serviço não encontrado com o id: " + id));
-
-        servico.setDescricao(requestDTO.descricao());
-        servico.setPreco(requestDTO.preco());
-
-        return ServicoResponseDTO.fromDomain(servicoRepository.save(servico));
+        Servico servico = buscarServicoPorId(id);
+        atualizarServico(servico, requestDTO);
+        Servico atualizado = servicoRepository.save(servico);
+        return ServicoResponseDTO.fromDomain(atualizado);
     }
 
     @Override
     @Transactional(readOnly = true)
     public ServicoResponseDTO getById(UUID id) {
-        Servico servico = servicoRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Serviço não encontrado com o id: " + id));
+        Servico servico = buscarServicoPorId(id);
         return ServicoResponseDTO.fromDomain(servico);
     }
 
@@ -68,5 +63,24 @@ public class ServicoApplicationService implements GerenciarServicoUseCase {
             throw new ResourceNotFoundException("Serviço não encontrado com o id: " + id);
         }
         servicoRepository.deleteById(id);
+    }
+
+    // MÉTODOS AUXILIARES
+
+    private Servico buscarServicoPorId(UUID id) {
+        return servicoRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Serviço não encontrado com o id: " + id));
+    }
+
+    private Servico construirServico(ServicoRequestDTO dto) {
+        Servico servico = new Servico();
+        servico.setDescricao(dto.descricao());
+        servico.setPreco(dto.preco());
+        return servico;
+    }
+
+    private void atualizarServico(Servico servico, ServicoRequestDTO dto) {
+        servico.setDescricao(dto.descricao());
+        servico.setPreco(dto.preco());
     }
 }

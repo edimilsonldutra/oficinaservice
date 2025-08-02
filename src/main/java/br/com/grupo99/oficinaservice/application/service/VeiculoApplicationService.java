@@ -22,7 +22,10 @@ public class VeiculoApplicationService implements GerenciarVeiculoUseCase {
     private final VeiculoRepository veiculoRepository;
     private final ClienteRepository clienteRepository;
 
-    public VeiculoApplicationService(VeiculoRepository veiculoRepository, ClienteRepository clienteRepository) {
+    public VeiculoApplicationService(
+            VeiculoRepository veiculoRepository,
+            ClienteRepository clienteRepository
+    ) {
         this.veiculoRepository = veiculoRepository;
         this.clienteRepository = clienteRepository;
     }
@@ -30,42 +33,26 @@ public class VeiculoApplicationService implements GerenciarVeiculoUseCase {
     @Override
     @Transactional
     public VeiculoResponseDTO create(VeiculoRequestDTO requestDTO) {
-        Cliente cliente = clienteRepository.findById(requestDTO.clienteId())
-                .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado com o id: " + requestDTO.clienteId()));
-
-        Veiculo veiculo = new Veiculo();
-        veiculo.setPlaca(requestDTO.placa());
-        veiculo.setMarca(requestDTO.marca());
-        veiculo.setModelo(requestDTO.modelo());
-        veiculo.setAno(requestDTO.ano());
-        veiculo.setCliente(cliente);
-
-        return VeiculoResponseDTO.fromDomain(veiculoRepository.save(veiculo));
+        Cliente cliente = buscarClientePorId(requestDTO.clienteId());
+        Veiculo veiculo = construirVeiculo(requestDTO, cliente);
+        Veiculo salvo = veiculoRepository.save(veiculo);
+        return VeiculoResponseDTO.fromDomain(salvo);
     }
 
     @Override
     @Transactional
     public VeiculoResponseDTO update(UUID id, VeiculoRequestDTO requestDTO) {
-        Veiculo veiculo = veiculoRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Veículo não encontrado com o id: " + id));
-
-        Cliente cliente = clienteRepository.findById(requestDTO.clienteId())
-                .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado com o id: " + requestDTO.clienteId()));
-
-        veiculo.setPlaca(requestDTO.placa());
-        veiculo.setMarca(requestDTO.marca());
-        veiculo.setModelo(requestDTO.modelo());
-        veiculo.setAno(requestDTO.ano());
-        veiculo.setCliente(cliente);
-
-        return VeiculoResponseDTO.fromDomain(veiculoRepository.save(veiculo));
+        Veiculo veiculo = buscarVeiculoPorId(id);
+        Cliente cliente = buscarClientePorId(requestDTO.clienteId());
+        atualizarVeiculo(veiculo, requestDTO, cliente);
+        Veiculo atualizado = veiculoRepository.save(veiculo);
+        return VeiculoResponseDTO.fromDomain(atualizado);
     }
 
     @Override
     @Transactional(readOnly = true)
     public VeiculoResponseDTO getById(UUID id) {
-        Veiculo veiculo = veiculoRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Veículo não encontrado com o id: " + id));
+        Veiculo veiculo = buscarVeiculoPorId(id);
         return VeiculoResponseDTO.fromDomain(veiculo);
     }
 
@@ -84,5 +71,35 @@ public class VeiculoApplicationService implements GerenciarVeiculoUseCase {
             throw new ResourceNotFoundException("Veículo não encontrado com o id: " + id);
         }
         veiculoRepository.deleteById(id);
+    }
+
+    // MÉTODOS AUXILIARES
+
+    private Cliente buscarClientePorId(UUID id) {
+        return clienteRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado com o id: " + id));
+    }
+
+    private Veiculo buscarVeiculoPorId(UUID id) {
+        return veiculoRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Veículo não encontrado com o id: " + id));
+    }
+
+    private Veiculo construirVeiculo(VeiculoRequestDTO dto, Cliente cliente) {
+        Veiculo veiculo = new Veiculo();
+        veiculo.setPlaca(dto.placa());
+        veiculo.setMarca(dto.marca());
+        veiculo.setModelo(dto.modelo());
+        veiculo.setAno(dto.ano());
+        veiculo.setCliente(cliente);
+        return veiculo;
+    }
+
+    private void atualizarVeiculo(Veiculo veiculo, VeiculoRequestDTO dto, Cliente cliente) {
+        veiculo.setPlaca(dto.placa());
+        veiculo.setMarca(dto.marca());
+        veiculo.setModelo(dto.modelo());
+        veiculo.setAno(dto.ano());
+        veiculo.setCliente(cliente);
     }
 }

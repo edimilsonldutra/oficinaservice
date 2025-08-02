@@ -25,33 +25,24 @@ public class PecaApplicationService implements GerenciarPecaUseCase {
     @Override
     @Transactional
     public PecaResponseDTO create(PecaRequestDTO requestDTO) {
-        Peca peca = new Peca();
-        peca.setNome(requestDTO.nome());
-        peca.setFabricante(requestDTO.fabricante());
-        peca.setPreco(requestDTO.preco());
-        peca.setEstoque(requestDTO.estoque());
-        return PecaResponseDTO.fromDomain(pecaRepository.save(peca));
+        Peca peca = construirPeca(requestDTO);
+        Peca salva = pecaRepository.save(peca);
+        return PecaResponseDTO.fromDomain(salva);
     }
 
     @Override
     @Transactional
     public PecaResponseDTO update(UUID id, PecaRequestDTO requestDTO) {
-        Peca peca = pecaRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Peça não encontrada com o id: " + id));
-
-        peca.setNome(requestDTO.nome());
-        peca.setFabricante(requestDTO.fabricante());
-        peca.setPreco(requestDTO.preco());
-        peca.setEstoque(requestDTO.estoque());
-
-        return PecaResponseDTO.fromDomain(pecaRepository.save(peca));
+        Peca peca = buscarPecaPorId(id);
+        atualizarPeca(peca, requestDTO);
+        Peca atualizada = pecaRepository.save(peca);
+        return PecaResponseDTO.fromDomain(atualizada);
     }
 
     @Override
     @Transactional(readOnly = true)
     public PecaResponseDTO getById(UUID id) {
-        Peca peca = pecaRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Peça não encontrada com o id: " + id));
+        Peca peca = buscarPecaPorId(id);
         return PecaResponseDTO.fromDomain(peca);
     }
 
@@ -75,11 +66,32 @@ public class PecaApplicationService implements GerenciarPecaUseCase {
     @Override
     @Transactional
     public PecaResponseDTO adicionarEstoque(UUID id, int quantidade) {
-        Peca peca = pecaRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Peça não encontrada com o id: " + id));
-
+        Peca peca = buscarPecaPorId(id);
         peca.adicionarEstoque(quantidade);
+        Peca atualizada = pecaRepository.save(peca);
+        return PecaResponseDTO.fromDomain(atualizada);
+    }
 
-        return PecaResponseDTO.fromDomain(pecaRepository.save(peca));
+    // MÉTODOS AUXILIARES
+
+    private Peca buscarPecaPorId(UUID id) {
+        return pecaRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Peça não encontrada com o id: " + id));
+    }
+
+    private Peca construirPeca(PecaRequestDTO dto) {
+        Peca peca = new Peca();
+        peca.setNome(dto.nome());
+        peca.setFabricante(dto.fabricante());
+        peca.setPreco(dto.preco());
+        peca.setEstoque(dto.estoque());
+        return peca;
+    }
+
+    private void atualizarPeca(Peca peca, PecaRequestDTO dto) {
+        peca.setNome(dto.nome());
+        peca.setFabricante(dto.fabricante());
+        peca.setPreco(dto.preco());
+        peca.setEstoque(dto.estoque());
     }
 }

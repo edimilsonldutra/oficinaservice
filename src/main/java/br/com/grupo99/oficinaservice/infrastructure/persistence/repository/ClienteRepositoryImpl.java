@@ -47,4 +47,7 @@ public class ClienteRepositoryImpl implements ClienteRepository {
     public boolean existsById(UUID id) {
         return jpaRepository.existsById(id);
     }
+
+    @Override
+    public boolean existsByCpfCnpj(String s) { return jpaRepository.existsByCpfCnpj(s); }
 }

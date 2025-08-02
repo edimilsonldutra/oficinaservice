@@ -2,6 +2,7 @@ package br.com.grupo99.oficinaservice.application.service;
 
 import br.com.grupo99.oficinaservice.application.dto.ClienteRequestDTO;
 import br.com.grupo99.oficinaservice.application.dto.ClienteResponseDTO;
+import br.com.grupo99.oficinaservice.application.exception.BusinessException;
 import br.com.grupo99.oficinaservice.application.exception.ResourceNotFoundException;
 import br.com.grupo99.oficinaservice.application.usecase.GerenciarClienteUseCase;
 import br.com.grupo99.oficinaservice.domain.model.Cliente;
@@ -26,37 +27,30 @@ public class ClienteApplicationService implements GerenciarClienteUseCase {
     @Override
     @Transactional
     public ClienteResponseDTO create(ClienteRequestDTO requestDTO) {
-        // TODO: Adicionar validação para CPF/CNPJ duplicado
-        Cliente cliente = new Cliente();
-        cliente.setNome(requestDTO.nome());
-        cliente.setCpfCnpj(requestDTO.cpfCnpj());
-        cliente.setEmail(requestDTO.email());
-        cliente.setTelefone(requestDTO.telefone());
+        validarCamposObrigatorios(requestDTO);
+        verificarDuplicidadeCpfCnpj(requestDTO.cpfCnpj());
 
+        Cliente cliente = mapearParaEntidade(requestDTO);
         Cliente clienteSalvo = clienteRepository.save(cliente);
+
         return ClienteResponseDTO.fromDomain(clienteSalvo);
     }
 
     @Override
     @Transactional
     public ClienteResponseDTO update(UUID id, ClienteRequestDTO requestDTO) {
-        Cliente cliente = clienteRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado com o id: " + id));
+        Cliente clienteExistente = buscarClientePorId(id);
 
-        cliente.setNome(requestDTO.nome());
-        cliente.setCpfCnpj(requestDTO.cpfCnpj());
-        cliente.setEmail(requestDTO.email());
-        cliente.setTelefone(requestDTO.telefone());
+        atualizarDadosCliente(clienteExistente, requestDTO);
 
-        Cliente clienteAtualizado = clienteRepository.save(cliente);
+        Cliente clienteAtualizado = clienteRepository.save(clienteExistente);
         return ClienteResponseDTO.fromDomain(clienteAtualizado);
     }
 
     @Override
     @Transactional(readOnly = true)
     public ClienteResponseDTO getById(UUID id) {
-        Cliente cliente = clienteRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado com o id: " + id));
+        Cliente cliente = buscarClientePorId(id);
         return ClienteResponseDTO.fromDomain(cliente);
     }
 
@@ -75,5 +69,45 @@ public class ClienteApplicationService implements GerenciarClienteUseCase {
             throw new ResourceNotFoundException("Cliente não encontrado com o id: " + id);
         }
         clienteRepository.deleteById(id);
+    }
+
+    // MÉTODOS AUXILIARES
+
+    private void validarCamposObrigatorios(ClienteRequestDTO dto) {
+        if (isBlank(dto.nome())) throw new BusinessException("Nome é obrigatório.");
+        if (isBlank(dto.cpfCnpj())) throw new BusinessException("CPF/CNPJ é obrigatório.");
+        if (isBlank(dto.email())) throw new BusinessException("E-mail é obrigatório.");
+        if (isBlank(dto.telefone())) throw new BusinessException("Telefone é obrigatório.");
+    }
+
+    private void verificarDuplicidadeCpfCnpj(String cpfCnpj) {
+        if (clienteRepository.existsByCpfCnpj(cpfCnpj)) {
+            throw new BusinessException("Já existe um cliente com este CPF/CNPJ.");
+        }
+    }
+
+    private Cliente buscarClientePorId(UUID id) {
+        return clienteRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado com o id: " + id));
+    }
+
+    private Cliente mapearParaEntidade(ClienteRequestDTO dto) {
+        Cliente cliente = new Cliente();
+        cliente.setNome(dto.nome());
+        cliente.setCpfCnpj(dto.cpfCnpj());
+        cliente.setEmail(dto.email());
+        cliente.setTelefone(dto.telefone());
+        return cliente;
+    }
+
+    private void atualizarDadosCliente(Cliente cliente, ClienteRequestDTO dto) {
+        cliente.setNome(dto.nome());
+        cliente.setCpfCnpj(dto.cpfCnpj());
+        cliente.setEmail(dto.email());
+        cliente.setTelefone(dto.telefone());
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
     }
 }
