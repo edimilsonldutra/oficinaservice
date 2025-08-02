@@ -16,15 +16,17 @@ A aplicação foi construída sobre os pilares da **Arquitetura Hexagonal (Porta
 - **PostgreSQL:** Base de dados relacional.
 - **Spring Data JPA:** Para a camada de persistência.
 - **Spring Security & JWT:** Para a segurança da API.
+- **Spring Boot Mail:** Para a funcionalidade de envio de e-mails de notificação.
 - **Docker & Docker Compose:** Para containerização e orquestração do ambiente.
 - **Maven & JaCoCo:** Para gestão de dependências, build e relatório de cobertura de testes.
-- **Swagger (OpenAPI 3):** Para documentação interativa da API.
+- **Swagger (OpenAPI 3):** Para documentação interativa da API RESTful.
 
 ---
 
 ## 3. ✨ Funcionalidades Implementadas
 
 - **Fluxos Principais:** Criação e acompanhamento de Ordens de Serviço com gestão de status.
+- **Envio de Orçamento:** Envio automático de um e-mail para o cliente quando o orçamento está pronto para aprovação.
 - **Gestão Administrativa:** CRUDs completos para Clientes, Veículos, Peças e Serviços.
 - **Segurança e Qualidade:** Autenticação JWT, validação de dados sensíveis (CPF/CNPJ, Placa) e testes automatizados.
 
@@ -122,6 +124,7 @@ oficina-service/
         │       │   └── validator/ (Validadores Customizados)
         │       └── infrastructure/
         │           ├── config/ (Configurações do Spring)
+        │           ├── notification/ (Adaptador de E-mail)
         │           ├── persistence/ (Adaptadores de Persistência)
         │           ├── rest/ (Controllers da API)
         │           └── security/ (Configuração do JWT)
