@@ -3,12 +3,28 @@ package br.com.grupo99.oficinaservice.infrastructure.notification;
 import br.com.grupo99.oficinaservice.application.service.NotificationService;
 import br.com.grupo99.oficinaservice.domain.model.OrdemServico;
 import br.com.grupo99.oficinaservice.domain.repository.ClienteRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
 @Service
+@Slf4j
 public class EmailNotificationService implements NotificationService {
+
+    private static final String EMAIL_REMETENTE = "nao-responda@oficina.com";
+    private static final String ASSUNTO_TEMPLATE = "Orçamento da sua Ordem de Serviço #%s";
+    private static final String MENSAGEM_TEMPLATE = """
+            Olá, %s!
+
+            O orçamento para a sua Ordem de Serviço está pronto para aprovação.
+            Valor Total: R$ %.2f
+
+            Por favor, entre em contato para aprovar o serviço.
+
+            Atenciosamente,
+            Equipe da Oficina
+            """;
 
     private final JavaMailSender mailSender;
     private final ClienteRepository clienteRepository;
@@ -19,34 +35,32 @@ public class EmailNotificationService implements NotificationService {
     }
 
     @Override
-    public void notificarClienteParaAprovacao(OrdemServico os) {
-        // Busca o cliente para obter o e-mail
-        clienteRepository.findById(os.getClienteId()).ifPresent(cliente -> {
-            if (cliente.getEmail() != null && !cliente.getEmail().isBlank()) {
+    public void notificarClienteParaAprovacao(OrdemServico ordemServico) {
+        clienteRepository.findById(ordemServico.getClienteId()).ifPresent(cliente -> {
+            if (isEmailValido(cliente.getEmail())) {
                 try {
-                    SimpleMailMessage message = new SimpleMailMessage();
-                    message.setFrom("nao-responda@oficina.com");
-                    message.setTo(cliente.getEmail());
-                    message.setSubject("Orçamento da sua Ordem de Serviço #" + os.getId().toString().substring(0, 8));
-
-                    String texto = String.format(
-                            "Olá, %s!\n\n" +
-                                    "O orçamento para a sua Ordem de Serviço está pronto para aprovação.\n" +
-                                    "Valor Total: R$ %.2f\n\n" +
-                                    "Por favor, entre em contato para aprovar o serviço.\n\n" +
-                                    "Atenciosamente,\nEquipe da Oficina",
-                            cliente.getNome(),
-                            os.getValorTotal()
-                    );
-
-                    message.setText(texto);
-                    mailSender.send(message);
-                    System.out.println("E-mail de orçamento enviado para: " + cliente.getEmail());
+                    SimpleMailMessage mensagem = criarMensagemEmail(cliente.getNome(), cliente.getEmail(), ordemServico);
+                    mailSender.send(mensagem);
+                    log.info("E-mail de orçamento enviado com sucesso - OS: {}, Cliente: {}", ordemServico.getId(), cliente.getEmail());
                 } catch (Exception e) {
-                    // Em um projeto real, aqui teríamos um log mais robusto (ex: SLF4J)
-                    System.err.println("Erro ao enviar e-mail de orçamento: " + e.getMessage());
+                    log.error("Erro ao enviar e-mail - OS: {}, Cliente: {}, Erro: {}", ordemServico.getId(), cliente.getEmail(), e.getMessage(), e);
                 }
+            } else {
+                log.warn("E-mail inválido ou ausente - Cliente: {}, OS: {}", cliente.getId(), ordemServico.getId());
             }
         });
+    }
+
+    private boolean isEmailValido(String email) {
+        return email != null && !email.isBlank();
+    }
+
+    private SimpleMailMessage criarMensagemEmail(String nomeCliente, String email, OrdemServico os) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(EMAIL_REMETENTE);
+        message.setTo(email);
+        message.setSubject(String.format(ASSUNTO_TEMPLATE, os.getId().toString().substring(0, 8)));
+        message.setText(String.format(MENSAGEM_TEMPLATE, nomeCliente, os.getValorTotal()));
+        return message;
     }
 }
