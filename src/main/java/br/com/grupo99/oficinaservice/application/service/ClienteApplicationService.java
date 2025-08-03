@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 @Service
 public class ClienteApplicationService implements GerenciarClienteUseCase {
 
+    //teste
     private final ClienteRepository clienteRepository;
 
     public ClienteApplicationService(ClienteRepository clienteRepository) {
