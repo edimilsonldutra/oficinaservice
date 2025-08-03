@@ -4,15 +4,23 @@ services:
     build: .
     container_name: oficina-app
     ports:
-      - "8080:8080"  # Porta da aplicação
-      - "5005:5005"  # Porta de depuração
+      - "8080:8080"
+      - "5005:5005"
     environment:
-      - JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
       - SPRING_PROFILES_ACTIVE=dev
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/oficinadb
-      - SPRING_DATASOURCE_USERNAME=user
-      - SPRING_DATASOURCE_PASSWORD=password
+      # Variáveis para o banco de dados
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=oficinadb
+      - DB_USER=user
+      - DB_PASS=password
+      # Variável para o JWT (pega o valor do seu terminal)
       - JWT_SECRET=${JWT_SECRET}
+      # Variáveis de E-mail (exemplo, idealmente viriam de um vault)
+      - MAIL_HOST=smtp.example.com
+      - MAIL_PORT=587
+      - MAIL_USER=seu-email@example.com
+      - MAIL_PASS=sua-senha-de-app
     depends_on:
       db:
         condition: service_healthy
@@ -39,7 +47,6 @@ services:
     networks:
       - oficina-net
 
-# --- DEFINIÇÃO DA REDE (ESTA PARTE ESTAVA EM FALTA) ---
 networks:
   oficina-net:
     driver: bridge
